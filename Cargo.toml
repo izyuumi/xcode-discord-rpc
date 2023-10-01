@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Yumi Izumi <me@yumiizumi.com>"]
 license = "MIT"
-description = "A simple Discord Rich Presence client for Xcode."
+repository = "https://github.com/izyumidev/xcode-discord-rpc"
+homepage = "https://github.com/izyumidev/xcode-discord-rpc"
+description = "A simple Discord Rich Presence client for Xcode"
+readme = "README.md"
 keywords = ["xcode", "discord", "rich", "presence", "rpc"]
 categories = ["development-tools"]
 
