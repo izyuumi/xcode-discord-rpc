@@ -1,0 +1,13 @@
+[package]
+name = "xcode-discord-rpc"
+version = "0.1.0"
+edition = "2021"
+authors = ["Yumi Izumi <me@yumiizumi.com>"]
+license = "MIT"
+description = "A simple Discord Rich Presence client for Xcode."
+keywords = ["xcode", "discord", "rich", "presence", "rpc"]
+categories = ["development-tools"]
+
+[dependencies]
+discord-rich-presence = "0.2.3"
+cargo-watch = "8.4.0"
