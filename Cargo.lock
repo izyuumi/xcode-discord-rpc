@@ -2121,6 +2121,7 @@ name = "xcode-discord-rpc"
 version = "0.1.1"
 dependencies = [
  "cargo-watch",
+ "chrono",
  "discord-rich-presence",
 ]
 
