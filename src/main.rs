@@ -48,10 +48,12 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                 let state = format!("Working on {}", file);
                 let details = format!("In {}", project);
 
-                let keys: (String, String) = if file_extension.eq("swift") {
-                    ("Swift".to_string(), "swift".to_string())
-                } else {
-                    ("Xcode".to_string(), "xcode".to_string())
+                let keys = match file_extension.as_str() {
+                    "swift" => ("Swift".to_string(), "swift".to_string()),
+                    "rb" => ("Ruby".to_string(), "ruby".to_string()),
+                    "cpp" | "cp" | "cxx" => ("C++".to_string(), "cpp".to_string()),
+                    "java" => ("Java".to_string(), "java".to_string()),
+                    _ => ("Xcode".to_string(), "xcode".to_string()),
                 };
 
                 let activity = Activity::new()
