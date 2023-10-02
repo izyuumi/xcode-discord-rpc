@@ -5,7 +5,7 @@
 - Launched in the background at login
 - No menu bar icon nor dock icon
 - Presence only when Xcode is running with a project open
-- Shows Swift logo when editing Swift files (more coming soon) and Xcode icon otherwise
+- Shows respective logos when editing [known files](#supported-file-types) and Xcode icon otherwise
 - Written 100% in Rust
 
 ## Getting Started
@@ -27,3 +27,18 @@ brew services stop xcode-discord-rpc
 brew uninstall xcode-discord-rpc
 brew untap izyumidev/xcode-discord-rpc
 ```
+
+## Supported File Types
+
+- `.swift`
+- `.cpp`, `.cp`, `cxx`
+- `.java`
+- `.rb`
+
+Please create an issue if you want support for more file types.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+I do not own the logos used in this project. They are the property of their respective owners.
