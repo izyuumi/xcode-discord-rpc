@@ -1,3 +1,4 @@
+use chrono::Local;
 use discord_rich_presence::{
     activity::{Activity, Assets},
     DiscordIpc, DiscordIpcClient,
@@ -9,7 +10,11 @@ const WAIT_TIME: u64 = 5;
 fn main() {
     loop {
         if let Err(err) = discord_rpc() {
-            println!("Error: {}", err);
+            eprintln!(
+                "Error at {}: {}",
+                Local::now().format("%Y-%m-%d %H:%M:%S"),
+                err
+            );
             thread::sleep(Duration::from_secs(WAIT_TIME));
         }
     }
@@ -35,7 +40,10 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if connection.is_ok() {
-            println!("Connected to Discord");
+            println!(
+                "Connected to Discord at {}",
+                Local::now().format("%Y-%m-%d %H:%M:%S")
+            );
             let mut xcode_is_running = check_xcode()?;
 
             while xcode_is_running {
