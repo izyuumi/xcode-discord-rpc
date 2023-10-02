@@ -45,8 +45,8 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                     .trim()
                     .to_string();
 
-                let state = format!("Working on {}", file);
-                let details = format!("In {}", project);
+                let details = format!("Working on {}", file);
+                let state = format!("in {}", project);
 
                 let keys = match file_extension.as_str() {
                     "swift" => ("Swift".to_string(), "swift".to_string()),
@@ -57,8 +57,8 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 let activity = Activity::new()
-                    .state(&state)
                     .details(&details)
+                    .state(&state)
                     .assets(Assets::new().large_image(&keys.1).large_text(&keys.0));
                 client.set_activity(activity)?;
 
