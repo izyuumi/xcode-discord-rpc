@@ -57,17 +57,18 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                 let state = format!("in {}", project);
 
                 let keys = match file_extension.as_str() {
-                    "swift" => ("Swift".to_string(), "swift".to_string()),
-                    "rb" => ("Ruby".to_string(), "ruby".to_string()),
-                    "cpp" | "cp" | "cxx" => ("C++".to_string(), "cpp".to_string()),
-                    "java" => ("Java".to_string(), "java".to_string()),
-                    _ => ("Xcode".to_string(), "xcode".to_string()),
+                    "swift" => ("Swift", "swift"),
+                    "cpp" | "cp" | "cxx" => ("C++", "cpp"),
+                    "c" => ("C", "c"),
+                    "rb" => ("Ruby", "ruby"),
+                    "java" => ("Java", "java"),
+                    _ => ("Xcode", "xcode"),
                 };
 
                 let activity = Activity::new()
                     .details(&details)
                     .state(&state)
-                    .assets(Assets::new().large_image(&keys.1).large_text(&keys.0));
+                    .assets(Assets::new().large_image(keys.1).large_text(keys.0));
                 client.set_activity(activity)?;
 
                 thread::sleep(Duration::from_secs(WAIT_TIME));

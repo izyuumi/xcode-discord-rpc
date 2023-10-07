@@ -32,10 +32,13 @@ brew untap izyumidev/xcode-discord-rpc
 
 - `.swift`
 - `.cpp`, `.cp`, `cxx`
+- `.c`
 - `.java`
 - `.rb`
 
 Please create an issue if you want support for more file types.
+
+Images are created on this figma file: https://www.figma.com/file/yNH9oBUxf6t4x3AXv6Xrd0/xcode-discord-rpc
 
 ## License
 
