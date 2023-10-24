@@ -51,6 +51,6 @@ jobs:
         env:
           COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
         with:
-          formula-name: gitui
+          formula-name: xcode-discord-rpc
           # https://github.com/mislav/bump-homebrew-formula-action/issues/58
-          formula-path: Formula/g/gitui.rb
+          formula-path: Formula/xcode-discord-rpc.rb
