@@ -63,7 +63,9 @@ jobs:
           tag: ${{ steps.get_version.outputs.version }}
           overwrite: true
           body: |
-            SHA256: ${{ steps.shasum.outputs.sha }}
+            # Changelog
+            ${{ steps.get_version.outputs.version }}
+            ${{ steps.create_release.outputs.html_url }}
 
       - name: Bump Homebrew
         uses: mislav/bump-homebrew-formula-action@v3
