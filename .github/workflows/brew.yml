@@ -56,6 +56,17 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Upload Release Asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./target/release/xcode-discord-rpc.tar.gz
+          asset_name: xcode-discord-rpc.tar.gz
+          tag: ${{ steps.get_version.outputs.version }}
+          overwrite: true
+          body: |
+            SHA256: ${{ steps.shasum.outputs.sha }}
+
       - name: Bump Homebrew
         uses: mislav/bump-homebrew-formula-action@v3
         with:
