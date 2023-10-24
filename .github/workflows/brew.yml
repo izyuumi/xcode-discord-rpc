@@ -5,8 +5,8 @@ on:
   push:
     tags:
       - "*"
-    branches:
-      - main
+    # branches:
+    #   - main
 
 jobs:
   release:
@@ -56,10 +56,10 @@ jobs:
           draft: false
           prerelease: false
 
-      # - name: Bump Homebrew
-      #   uses: mislav/bump-homebrew-formula-action@v3
-      #   with:
-      #     formula-name: xcode-discord-rpc
-      #     homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
-      #   env:
-      #     COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
+      - name: Bump Homebrew
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: xcode-discord-rpc
+          homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
+        env:
+          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
