@@ -39,12 +39,12 @@ jobs:
         run: cargo b -r
 
       - name: Archive
-        run: tar -czf ./release/xcode-discord-presence.tar.gz ./target/release/xcode-discord-presence
+        run: tar -czf ./target/release/xcode-discord-presence.tar.gz -C ./target/release/xcode-discord-presence
 
       - name: Set SHA
         id: shasum
         run: |
-          echo sha="$(shasum -a 256 ./release/xcode-discord-presence.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
+          echo sha="$(shasum -a 256 ./targer/release/xcode-discord-presence.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
 
       - name: Bump homebrew-core formula
         uses: mislav/bump-homebrew-formula-action@v2
