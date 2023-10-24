@@ -72,3 +72,4 @@ jobs:
           homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
         env:
           COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
