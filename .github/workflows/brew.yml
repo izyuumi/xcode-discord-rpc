@@ -36,12 +36,12 @@ jobs:
         run: cargo b -r
 
       - name: Archive
-        run: tar -czf target/release/xcode-discord-rpc.tar.gz target/release/xcode-discord-rpc 
+        run: tar -czvf ./target/release/xcode-discord-rpc.tar.gz ./target/release/xcode-discord-rpc 
 
       - name: Set SHA
         id: shasum
         run: |
-          echo sha="$(shasum -a 256 target/release/xcode-discord-rpc.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
+          echo sha="$(shasum -a 256 ./target/release/xcode-discord-rpc.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
 
       - name: Create Release
         id: create_release
@@ -70,13 +70,13 @@ jobs:
             ${{ steps.get_version.outputs.version }}
             ${{ steps.create_release.outputs.html_url }}
 
-      - name: Bump Homebrew
-        uses: mislav/bump-homebrew-formula-action@v3
-        with:
-          formula-name: xcode-discord-rpc
-          homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
-          commit-message: "Release ${{ steps.get_version.outputs.version }}"
-          download-url: https://github.com/izyumidev/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz
-        env:
-          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Bump Homebrew
+      #   uses: mislav/bump-homebrew-formula-action@v3
+      #   with:
+      #     formula-name: xcode-discord-rpc
+      #     homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
+      #     commit-message: "Release ${{ steps.get_version.outputs.version }}"
+      #     download-url: https://github.com/izyumidev/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz
+      #   env:
+      #     COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
