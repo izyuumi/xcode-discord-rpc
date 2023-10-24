@@ -36,11 +36,7 @@ jobs:
           components: clippy
 
       - name: Build
-        run: cargo build
-      - name: Run clippy
-        run: |
-          cargo clean
-          make clippy
+        run: cargo b -r
 
       - name: Build Release Mac
         run: make release-mac
