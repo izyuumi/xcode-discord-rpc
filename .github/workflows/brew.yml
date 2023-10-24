@@ -18,13 +18,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
       - name: Get version
         id: get_version
         # run: echo "version=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
         run: echo "version=v0.1.3" >> $GITHUB_OUTPUT
 
-      - name: Restore cargo cache
+      - name: Restore Cargo Cache
         uses: Swatinem/rust-cache@v2
         env:
           cache-name: ci
@@ -46,6 +45,17 @@ jobs:
         id: shasum
         run: |
           echo sha="$(shasum -a 256 ./targer/release/xcode-discord-presence.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          release_name: "Release ${{ steps.get_version.outputs.version }}"
+          draft: false
+          prerelease: false
 
       - name: Bump Homebrew
         uses: mislav/bump-homebrew-formula-action@v3
