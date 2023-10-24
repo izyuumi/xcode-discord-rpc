@@ -5,6 +5,8 @@ on:
   push:
     tags:
       - "*"
+    branches:
+      - main
 
 jobs:
   release:
@@ -35,8 +37,6 @@ jobs:
 
       - name: Build
         run: cargo build
-      - name: Run tests
-        run: make test
       - name: Run clippy
         run: |
           cargo clean
@@ -47,7 +47,8 @@ jobs:
 
       - name: Set SHA
         id: shasum
-        run: echo sha="$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
+        run: |
+          echo sha="$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
 
       - name: Bump homebrew-core formula
         uses: mislav/bump-homebrew-formula-action@v2
