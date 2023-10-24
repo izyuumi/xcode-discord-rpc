@@ -46,13 +46,3 @@ jobs:
         id: shasum
         run: |
           echo sha="$(shasum -a 256 ./targer/release/xcode-discord-presence.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
-
-      - name: Bump Brew
-        env: 
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.BREW_TOKEN }}
-        run: |
-          brew tap izyumidev/tap
-          brew bump-formula-pr -f --version=${{ steps.get_version.outputs.version }} --no-browse --no-audit \
-          --sha256=${{ steps.shasum.outputs.sha }} \
-          --url="https://github.com/izyumidev/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz" \
-          izyumidev/tap/xcode-discord-rpc
