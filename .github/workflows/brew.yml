@@ -55,13 +55,13 @@ jobs:
           prerelease: false
 
       - name: Copy Archive to Home
-        run: cp target/release/xcode-discord-rpc.tar.gz ~/
+        run: cp target/release/xcode-discord-rpc.tar.gz .
 
       - name: Upload Release Asset
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ~/xcode-discord-rpc.tar.gz
+          file: ./xcode-discord-rpc.tar.gz
           asset_name: xcode-discord-rpc.tar.gz
           tag: ${{ steps.get_version.outputs.version }}
           overwrite: true
