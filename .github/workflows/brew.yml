@@ -54,8 +54,8 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Move Archive to Home
-        run: mv target/release/xcode-discord-rpc.tar.gz ~/
+      - name: Copy Archive to Home
+        run: cp target/release/xcode-discord-rpc.tar.gz ~/
 
       - name: Upload Release Asset
         uses: svenstaro/upload-release-action@v2
