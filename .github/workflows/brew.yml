@@ -36,7 +36,7 @@ jobs:
         run: cargo b -r
 
       - name: Archive
-        run: tar -czvf ./target/release/xcode-discord-rpc.tar.gz ./target/release/xcode-discord-rpc 
+        run: cd target/release && tar -czvf xcode-discord-rpc.tar.gz xcode-discord-rpc && cd ../..
 
       - name: Set SHA
         id: shasum
