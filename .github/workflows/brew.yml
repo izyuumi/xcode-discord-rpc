@@ -47,11 +47,12 @@ jobs:
         run: |
           echo sha="$(shasum -a 256 ./targer/release/xcode-discord-presence.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
 
-      - name: Bump homebrew-core formula
-        uses: mislav/bump-homebrew-formula-action@v2
-        env:
-          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
-        with:
-          formula-name: xcode-discord-rpc
-          # https://github.com/mislav/bump-homebrew-formula-action/issues/58
-          formula-path: Formula/xcode-discord-rpc.rb
+      - name: Bump Brew
+        env: 
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.BREW_TOKEN }}
+        run: |
+          brew tap izyumidev/tap
+          brew bump-formula-pr -f --version=${{ steps.get_version.outputs.version }} --no-browse --no-audit \
+          --sha256=${{ steps.shasum.outputs.sha }} \
+          --url="https://github.com/izyumidev/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz" \
+          izyumidev/tap/xcode-discord-rpc
