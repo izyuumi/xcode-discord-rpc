@@ -1,0 +1,61 @@
+# https://github.com/extrawurst/gitui/blob/master/.github/workflows/cd.yml
+name: auto-brew
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get version
+        id: get_version
+        run: echo "version=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+        env:
+          cache-name: ci
+        with:
+          shared-key: ${{ matrix.os }}-${{ env.cache-name }}-stable
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Build
+        run: cargo build
+      - name: Run tests
+        run: make test
+      - name: Run clippy
+        run: |
+          cargo clean
+          make clippy
+
+      - name: Build Release Mac
+        run: make release-mac
+
+      - name: Set SHA
+        id: shasum
+        run: |
+          echo sha="$(shasum -a 256 ./release/gitui-mac.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
+
+      - name: Bump homebrew-core formula
+        uses: mislav/bump-homebrew-formula-action@v2
+        if: !contains(github.ref , '-')" # skip prereleases
+        env:
+          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
+        with:
+          formula-name: gitui
+          # https://github.com/mislav/bump-homebrew-formula-action/issues/58
+          formula-path: Formula/g/gitui.rb
