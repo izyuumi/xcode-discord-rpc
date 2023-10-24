@@ -51,7 +51,6 @@ jobs:
 
       - name: Bump homebrew-core formula
         uses: mislav/bump-homebrew-formula-action@v2
-        if: !contains(github.ref , '-')" # skip prereleases
         env:
           COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
         with:
