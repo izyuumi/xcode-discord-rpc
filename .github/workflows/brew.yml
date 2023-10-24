@@ -62,4 +62,4 @@ jobs:
           formula-name: xcode-discord-rpc
           homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
         env:
-          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
+          COMMITTER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
