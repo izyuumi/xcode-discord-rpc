@@ -14,11 +14,8 @@ const WAIT_TIME: u64 = 5;
 fn main() {
     loop {
         if let Err(err) = discord_rpc() {
-            eprintln!(
-                "Error at {}: {}",
-                Local::now().format("%Y-%m-%d %H:%M:%S"),
-                err
-            );
+            log("Failed to connect to Discord", Some(&err.to_string()));
+            log("Trying to reconnect...", None);
             thread::sleep(Duration::from_secs(WAIT_TIME));
         }
     }
@@ -44,15 +41,13 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         if connection.is_ok() {
-            println!(
-                "Connected to Discord at {}",
-                Local::now().format("%Y-%m-%d %H:%M:%S")
-            );
+            log("Connected to Discord", None);
             let mut xcode_is_running = check_xcode()?;
             let mut started_at = Timestamps::new().start(current_time());
             let mut project_before = String::from("");
 
             while xcode_is_running {
+                log("Xcode is running", None);
                 let file = current_file()?;
                 let project = current_project()?;
                 let file_extension = (file.split('.').collect::<Vec<&str>>().last().unwrap_or(&""))
@@ -90,6 +85,7 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                     .assets(Assets::new().large_image(keys.1).large_text(keys.0))
                     .timestamps(started_at.clone());
                 client.set_activity(activity)?;
+                log("Updated activity", None);
 
                 thread::sleep(Duration::from_secs(WAIT_TIME));
 
@@ -97,6 +93,7 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
+        log("Xcode is not running", None);
         thread::sleep(Duration::from_secs(30));
     }
 
@@ -165,4 +162,12 @@ fn current_time() -> i64 {
         .duration_since(UNIX_EPOCH)
         .expect("Failed to obtain current time")
         .as_secs() as i64
+}
+
+fn log(message: &str, error: Option<&str>) {
+    let data_format = Local::now().format("%Y-%m-%d %H:%M:%S");
+    match error {
+        Some(error) => eprintln!("{}: {} (Error: {})", data_format, message, error),
+        None => println!("{}: {}", data_format, message),
+    }
 }
