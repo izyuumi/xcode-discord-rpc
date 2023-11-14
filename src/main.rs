@@ -27,21 +27,6 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
 
     loop {
         if client.connect().is_ok() {
-            thread::sleep(Duration::from_secs(WAIT_TIME));
-            break;
-        }
-    }
-
-    loop {
-        let connection = client.connect();
-
-        if connection.is_err() {
-            thread::sleep(Duration::from_secs(WAIT_TIME));
-            client.reconnect()?;
-            continue;
-        }
-
-        if connection.is_ok() {
             log("Connected to Discord", None);
             let mut xcode_is_running = check_xcode()?;
             let mut started_at = Timestamps::new().start(current_time());
@@ -54,21 +39,16 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                 let file_extension = (file.split('.').collect::<Vec<&str>>().last().unwrap_or(&""))
                     .trim()
                     .to_string();
-                let project_is_empty = project.is_empty();
+
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time());
                     project_before = project.clone();
                 }
 
-                let details = if project_is_empty {
-                    String::from("Idle")
+                let (details, state) = if project.is_empty() {
+                    (String::from("Idle"), String::from("Idle"))
                 } else {
-                    format!("Working on {}", file)
-                };
-                let state = if project_is_empty {
-                    String::from("Idle")
-                } else {
-                    format!("in {}", project)
+                    (format!("Working on {}", file), format!("in {}", project))
                 };
 
                 let keys = match file_extension.as_str() {
@@ -89,12 +69,11 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                 log("Updated activity", None);
 
                 thread::sleep(Duration::from_secs(WAIT_TIME));
-
                 xcode_is_running = check_xcode()?;
             }
+        } else {
+            log("Xcode is not running", None);
         }
-
-        log("Xcode is not running", None);
         thread::sleep(Duration::from_secs(WAIT_TIME));
     }
 
