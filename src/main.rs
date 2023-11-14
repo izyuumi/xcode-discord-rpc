@@ -145,9 +145,9 @@ fn current_time() -> i64 {
 }
 
 fn log(message: &str, error: Option<&str>) {
-    let data_format = Local::now().format("%Y-%m-%d %H:%M:%S");
+    let date_format = Local::now().format("%Y-%m-%d %H:%M:%S");
     match error {
-        Some(error) => eprintln!("{}: {} (Error: {})", data_format, message, error),
-        None => println!("{}: {}", data_format, message),
+        Some(error) => eprintln!("{}: {} (Error: {})", date_format, message, error),
+        None => println!("{}: {}", date_format, message),
     }
 }
