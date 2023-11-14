@@ -9,7 +9,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-const WAIT_TIME: u64 = 5;
+const WAIT_TIME: u64 = 30;
 
 fn main() {
     loop {
@@ -18,6 +18,7 @@ fn main() {
             log("Trying to reconnect...", None);
             thread::sleep(Duration::from_secs(WAIT_TIME));
         }
+        thread::sleep(Duration::from_secs(WAIT_TIME));
     }
 }
 
@@ -94,7 +95,7 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         log("Xcode is not running", None);
-        thread::sleep(Duration::from_secs(30));
+        thread::sleep(Duration::from_secs(WAIT_TIME));
     }
 
     #[allow(unreachable_code)]
