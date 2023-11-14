@@ -10,25 +10,39 @@ use std::{
 };
 
 const WAIT_TIME: u64 = 30;
+const XCODE_CHECK_CYCLE: i8 = 5;
 
 fn main() {
     loop {
         if let Err(err) = discord_rpc() {
             log("Failed to connect to Discord", Some(&err.to_string()));
             log("Trying to reconnect...", None);
-            thread::sleep(Duration::from_secs(WAIT_TIME));
+            sleep()
         }
-        thread::sleep(Duration::from_secs(WAIT_TIME));
+        sleep()
     }
 }
 
 fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = DiscordIpcClient::new("1158013054898950185")?;
 
+    let mut xcode_is_running = false;
+    let mut xcode_check_cycle_counter = 0;
+
     loop {
+        if xcode_check_cycle_counter == XCODE_CHECK_CYCLE {
+            xcode_check_cycle_counter = 0;
+            xcode_is_running = check_xcode()?;
+            if !xcode_is_running {
+                log("Xcode is not running", None);
+                sleep();
+                continue;
+            }
+        }
+        xcode_check_cycle_counter += 1;
+
         if client.connect().is_ok() {
             log("Connected to Discord", None);
-            let mut xcode_is_running = check_xcode()?;
             let mut started_at = Timestamps::new().start(current_time());
             let mut project_before = String::from("");
 
@@ -68,13 +82,13 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                 client.set_activity(activity)?;
                 log("Updated activity", None);
 
-                thread::sleep(Duration::from_secs(WAIT_TIME));
-                xcode_is_running = check_xcode()?;
+                sleep();
+                xcode_is_running = check_xcode()?
             }
         } else {
-            log("Xcode is not running", None);
+            log("Xcode is not running", None)
         }
-        thread::sleep(Duration::from_secs(WAIT_TIME));
+        sleep()
     }
 
     #[allow(unreachable_code)]
@@ -150,4 +164,8 @@ fn log(message: &str, error: Option<&str>) {
         Some(error) => eprintln!("{}: {} (Error: {})", date_format, message, error),
         None => println!("{}: {}", date_format, message),
     }
+}
+
+fn sleep() {
+    thread::sleep(Duration::from_secs(WAIT_TIME))
 }
