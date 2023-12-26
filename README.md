@@ -1,5 +1,7 @@
 # Discord Rich Presence for Xcode
 
+A simple Discord Rich Presence client for Xcode
+
 <p align="center">
   <img src="readme.png" width="400" style="max-width: 100%; height: auto;" />
 </p>
