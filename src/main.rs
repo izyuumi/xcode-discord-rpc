@@ -1,4 +1,5 @@
 use chrono::Local;
+use clap::{Arg, Command as ClapCommand};
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
     DiscordIpc, DiscordIpcClient,
@@ -13,8 +14,32 @@ const WAIT_TIME: u64 = 30;
 const XCODE_CHECK_CYCLE: i8 = 5;
 
 fn main() {
+    // Parse command-line arguments
+    let matches = ClapCommand::new("Xcode Discord RPC")
+        .version("1.0")
+        .author("Your Name <your.email@example.com>")
+        .about("Displays Xcode status on Discord")
+        .arg(
+            Arg::new("show_file")
+                .short('f')
+                .long("show-file")
+                .num_args(0)
+                .help("Show current file"),
+        )
+        .arg(
+            Arg::new("show_project")
+                .short('p')
+                .long("show-project")
+                .num_args(0)
+                .help("Show current project"),
+        )
+        .get_matches();
+
+    let show_file = matches.get_flag("show_file");
+    let show_project = matches.get_flag("show_project");
+
     loop {
-        if let Err(err) = discord_rpc() {
+        if let Err(err) = discord_rpc(show_file, show_project) {
             log("Failed to connect to Discord", Some(&err.to_string()));
             log("Trying to reconnect...", None);
             sleep()
@@ -23,7 +48,7 @@ fn main() {
     }
 }
 
-fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
+fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::error::Error>> {
     let mut client = DiscordIpcClient::new("1158013054898950185")?;
 
     let mut xcode_is_running = false;
@@ -48,38 +73,51 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
 
             while xcode_is_running {
                 log("Xcode is running", None);
-                let file = current_file()?;
-                let project = current_project()?;
-                let file_extension = (file.split('.').collect::<Vec<&str>>().last().unwrap_or(&""))
-                    .trim()
-                    .to_string();
+                let file = if show_file {
+                    current_file()?
+                } else {
+                    String::from("")
+                };
+                let project = if show_project {
+                    current_project()?
+                } else {
+                    String::from("")
+                };
 
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time());
                     project_before = project.clone();
                 }
 
-                let (details, state) = if project.is_empty() {
-                    (String::from("Idle"), String::from("Idle"))
+                // Declare `details` and `state` as `String` types before the activity block
+                let details;
+                let state;
+
+                let activity = if show_file || show_project {
+                    details = if show_file && !file.is_empty() {
+                        format!("Working on {}", file)
+                    } else {
+                        String::from("Working...")
+                    };
+
+                    state = if show_project && !project.is_empty() {
+                        format!("in {}", project)
+                    } else {
+                        String::from("in Project")
+                    };
+
+                    Activity::new()
+                        .details(&details)
+                        .state(&state)
+                        .assets(Assets::new().large_image("xcode").large_text("Xcode"))
+                        .timestamps(started_at.clone())
                 } else {
-                    (format!("Working on {}", file), format!("in {}", project))
+                    // If both are hidden, only show Xcode icon and text
+                    Activity::new()
+                        .assets(Assets::new().large_image("xcode").large_text("Xcode"))
+                        .timestamps(started_at.clone())
                 };
 
-                let keys = match file_extension.as_str() {
-                    "swift" => ("Swift", "swift"),
-                    "cpp" | "cp" | "cxx" => ("C++", "cpp"),
-                    "c" => ("C", "c"),
-                    "rb" => ("Ruby", "ruby"),
-                    "java" => ("Java", "java"),
-                    "json" => ("JSON", "json"),
-                    _ => ("Xcode", "xcode"),
-                };
-
-                let activity = Activity::new()
-                    .details(&details)
-                    .state(&state)
-                    .assets(Assets::new().large_image(keys.1).large_text(keys.0))
-                    .timestamps(started_at.clone());
                 client.set_activity(activity)?;
                 log("Updated activity", None);
 
