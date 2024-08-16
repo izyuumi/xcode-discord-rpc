@@ -14,3 +14,4 @@ categories = ["development-tools"]
 [dependencies]
 discord-rich-presence = "0.2.3"
 chrono = "0.4.31"
+clap = { version = "4.0", features = ["derive", "cargo"] }
