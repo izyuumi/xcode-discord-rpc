@@ -1,5 +1,5 @@
 use chrono::Local;
-use clap::{Arg, Command as ClapCommand};
+use clap::{Arg, ArgAction, Command as ClapCommand};
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
     DiscordIpc, DiscordIpcClient,
@@ -13,30 +13,39 @@ use std::{
 const WAIT_TIME: u64 = 30;
 const XCODE_CHECK_CYCLE: i8 = 5;
 
+const SHOW_FILE_ARG_ID: &str = "show_file";
+const SHOW_PROJECT_ARG_ID: &str = "show_project";
+
 fn main() {
     // Parse command-line arguments
     let matches = ClapCommand::new("Xcode Discord RPC")
-        .version("1.0")
-        .author("Your Name <your.email@example.com>")
-        .about("Displays Xcode status on Discord")
+        .version(clap::crate_version!())
+        .author(clap::crate_authors!())
+        .about("Displays Xcode status on Discord Rich Presence")
         .arg(
-            Arg::new("show_file")
+            Arg::new(SHOW_FILE_ARG_ID)
                 .short('f')
                 .long("show-file")
                 .num_args(0)
-                .help("Show current file"),
+                .action(ArgAction::SetFalse)
+                .help("Hide current file in Discord Rich Presence")
+                .default_value("true"),
         )
         .arg(
-            Arg::new("show_project")
+            Arg::new(SHOW_PROJECT_ARG_ID)
                 .short('p')
                 .long("show-project")
                 .num_args(0)
-                .help("Show current project"),
+                .action(ArgAction::SetFalse)
+                .help("Hide current project in Discord Rich Presence")
+                .default_value("true"),
         )
         .get_matches();
 
-    let show_file = matches.get_flag("show_file");
-    let show_project = matches.get_flag("show_project");
+    let (show_file, show_project) = (
+        matches.get_flag(SHOW_FILE_ARG_ID),
+        matches.get_flag(SHOW_PROJECT_ARG_ID),
+    );
 
     loop {
         if let Err(err) = discord_rpc(show_file, show_project) {
@@ -73,11 +82,6 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
 
             while xcode_is_running {
                 log("Xcode is running", None);
-                let file = if show_file {
-                    current_file()?
-                } else {
-                    String::from("")
-                };
                 let project = if show_project {
                     current_project()?
                 } else {
@@ -89,34 +93,57 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     project_before = project.clone();
                 }
 
-                // Declare `details` and `state` as `String` types before the activity block
-                let details;
-                let state;
+                if project.is_empty() {
+                    client.set_activity(
+                        Activity::new()
+                            .timestamps(started_at.clone())
+                            .assets(
+                                Assets::new()
+                                    .large_image("xcode")
+                                    .large_text("Xcode")
+                                    .small_image("xcode")
+                                    .small_text("Xcode"),
+                            )
+                            .details("Idle")
+                            .state("Idle"),
+                    )?;
+                    log("Updated activity", None);
+                    sleep();
+                    xcode_is_running = check_xcode()?;
+                    continue;
+                }
 
-                let activity = if show_file || show_project {
-                    details = if show_file && !file.is_empty() {
-                        format!("Working on {}", file)
-                    } else {
-                        String::from("Working...")
+                let mut keys = ("Xcode", "xcode");
+
+                let details = if show_file {
+                    let file = current_file()?;
+                    let file_extension = (file.split('.').last().unwrap_or("")).trim().to_string();
+                    keys = match file_extension.as_str() {
+                        "swift" => ("Swift", "swift"),
+                        "cpp" | "cp" | "cxx" => ("C++", "cpp"),
+                        "c" => ("C", "c"),
+                        "rb" => ("Ruby", "ruby"),
+                        "java" => ("Java", "java"),
+                        "json" => ("JSON", "json"),
+                        "metal" => ("Metal", "metal"),
+                        _ => ("Xcode", "xcode"),
                     };
-
-                    state = if show_project && !project.is_empty() {
-                        format!("in {}", project)
-                    } else {
-                        String::from("in Project")
-                    };
-
-                    Activity::new()
-                        .details(&details)
-                        .state(&state)
-                        .assets(Assets::new().large_image("xcode").large_text("Xcode"))
-                        .timestamps(started_at.clone())
+                    &format!("Working on {}", file)
                 } else {
-                    // If both are hidden, only show Xcode icon and text
-                    Activity::new()
-                        .assets(Assets::new().large_image("xcode").large_text("Xcode"))
-                        .timestamps(started_at.clone())
+                    "Working on a file"
                 };
+
+                let state = if show_project {
+                    &format!("in {}", project)
+                } else {
+                    "in a Project"
+                };
+
+                let activity = Activity::new()
+                    .timestamps(started_at.clone())
+                    .assets(Assets::new().large_image(keys.1).large_text(keys.0))
+                    .details(details)
+                    .state(state);
 
                 client.set_activity(activity)?;
                 log("Updated activity", None);
@@ -197,6 +224,7 @@ fn current_time() -> i64 {
         .as_secs() as i64
 }
 
+/// Standardized logging function
 fn log(message: &str, error: Option<&str>) {
     let date_format = Local::now().format("%Y-%m-%d %H:%M:%S");
     match error {
@@ -205,6 +233,7 @@ fn log(message: &str, error: Option<&str>) {
     }
 }
 
+/// Sleep for WAIT_TIME seconds
 fn sleep() {
     thread::sleep(Duration::from_secs(WAIT_TIME))
 }
