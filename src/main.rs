@@ -72,6 +72,7 @@ fn discord_rpc() -> Result<(), Box<dyn std::error::Error>> {
                     "rb" => ("Ruby", "ruby"),
                     "java" => ("Java", "java"),
                     "json" => ("JSON", "json"),
+                    "metal" => ("Metal", "metal"),
                     _ => ("Xcode", "xcode"),
                 };
 

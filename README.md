@@ -43,6 +43,7 @@ brew untap izyumidev/xcode-discord-rpc
 - `.java`
 - `.json`
 - `.rb`
+- `.metal`
 
 Please [create an issue](https://github.com/izyumidev/xcode-discord-rpc/issues/new/choose) if you desire for more file types to be supported.
 
