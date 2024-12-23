@@ -1,4 +1,5 @@
-name: buildViaCI
+# https://github.com/extrawurst/gitui/blob/master/.github/workflows/cd.yml
+name: auto-brew
 
 on:
   push:
@@ -84,3 +85,14 @@ jobs:
             # Changelog
             ${{ steps.get_version.outputs.version }}
             ${{ steps.create_release.outputs.html_url }}
+
+      - name: Bump Homebrew
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: xcode-discord-rpc
+          homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
+          commit-message: "Release ${{ steps.get_version.outputs.version }}"
+          download-url: https://github.com/izyumidev/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz
+        env:
+          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
