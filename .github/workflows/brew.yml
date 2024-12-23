@@ -1,5 +1,4 @@
-# https://github.com/extrawurst/gitui/blob/master/.github/workflows/cd.yml
-name: auto-brew
+name: buildViaCI
 
 on:
   push:
@@ -32,16 +31,35 @@ jobs:
         with:
           components: clippy
 
-      - name: Build
-        run: cargo b -r
+      - name: Install Rust Targets
+        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
 
-      - name: Archive
-        run: cd target/release && tar -czvf xcode-discord-rpc.tar.gz xcode-discord-rpc && cd ../..
+      - name: Build for x86_64
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Build for arm64
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Create Universal Binary
+        run: |
+          mkdir -p target/release/universal
+          lipo -create -output target/release/universal/xcode-discord-rpc \
+            target/x86_64-apple-darwin/release/xcode-discord-rpc \
+            target/aarch64-apple-darwin/release/xcode-discord-rpc
+
+      - name: Archive Universal Binary
+        run: |
+          cd target/release/universal
+          tar -czvf xcode-discord-rpc.tar.gz xcode-discord-rpc
+          cd ../../..
 
       - name: Set SHA
         id: shasum
         run: |
-          echo sha="$(shasum -a 256 ./target/release/xcode-discord-rpc.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
+          echo sha="$(shasum -a 256 ./target/release/universal/xcode-discord-rpc.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
+
+      - name: Copy Archive to Home
+        run: cp target/release/universal/xcode-discord-rpc.tar.gz .
 
       - name: Create Release
         id: create_release
@@ -53,9 +71,6 @@ jobs:
           release_name: "Release ${{ steps.get_version.outputs.version }}"
           draft: false
           prerelease: false
-
-      - name: Copy Archive to Home
-        run: cp target/release/xcode-discord-rpc.tar.gz .
 
       - name: Upload Release Asset
         uses: svenstaro/upload-release-action@v2
@@ -69,14 +84,3 @@ jobs:
             # Changelog
             ${{ steps.get_version.outputs.version }}
             ${{ steps.create_release.outputs.html_url }}
-
-      - name: Bump Homebrew
-        uses: mislav/bump-homebrew-formula-action@v3
-        with:
-          formula-name: xcode-discord-rpc
-          homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
-          commit-message: "Release ${{ steps.get_version.outputs.version }}"
-          download-url: https://github.com/izyumidev/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz
-        env:
-          COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
