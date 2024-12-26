@@ -161,6 +161,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
     Ok(())
 }
 
+/// Check if Xcode is running
 fn check_xcode() -> Result<bool, Box<dyn std::error::Error>> {
     let xcode_is_running = run_osascript(
         r#"
@@ -174,6 +175,7 @@ fn check_xcode() -> Result<bool, Box<dyn std::error::Error>> {
     Ok(xcode_is_running == "true")
 }
 
+/// Get the current file's name as a String
 fn current_file() -> Result<String, Box<dyn std::error::Error>> {
     let file = run_osascript(
         r#"
@@ -189,6 +191,7 @@ fn current_file() -> Result<String, Box<dyn std::error::Error>> {
     Ok(file.to_string())
 }
 
+/// Get the current project's name as a String
 fn current_project() -> Result<String, Box<dyn std::error::Error>> {
     let project = run_osascript(
         r#"
@@ -208,6 +211,7 @@ fn current_project() -> Result<String, Box<dyn std::error::Error>> {
     Ok(project)
 }
 
+/// Execute an AppleScript command using osascript and returns the output as a String
 fn run_osascript(script: &str) -> Result<String, Box<dyn std::error::Error>> {
     let output = Command::new("osascript")
         .arg("-e")
@@ -217,6 +221,7 @@ fn run_osascript(script: &str) -> Result<String, Box<dyn std::error::Error>> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Get the current time in seconds since the UNIX epoch as a 64-bit integer
 fn current_time() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
