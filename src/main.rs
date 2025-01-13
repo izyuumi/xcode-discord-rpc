@@ -152,7 +152,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 xcode_is_running = check_xcode()?
             }
         } else {
-            log("Xcode is not running", None)
+            log("Discord is not running", None)
         }
         sleep()
     }
