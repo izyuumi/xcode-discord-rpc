@@ -10,13 +10,21 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(not(debug_assertions))]
 const WAIT_TIME: u64 = 30;
+#[cfg(debug_assertions)]
+const WAIT_TIME: u64 = 3;
+#[cfg(debug_assertions)]
 const XCODE_CHECK_CYCLE: i8 = 1;
+#[cfg(not(debug_assertions))]
+const XCODE_CHECK_CYCLE: i8 = 5;
+#[cfg(debug_assertions)]
+const IDLE_DETERMINATION_TIME: i64 = 5;
+#[cfg(not(debug_assertions))]
+const IDLE_DETERMINATION_TIME: i64 = 10;
 
 const SHOW_FILE_ARG_ID: &str = "show_file";
 const SHOW_PROJECT_ARG_ID: &str = "show_project";
-
-const IDLE_DETERMINATION_TIME: i64 = 60;
 
 fn main() {
     // Parse command-line arguments
@@ -102,6 +110,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 }
 
                 if project.is_empty() || is_idle {
+                    started_at = Timestamps::new().start(current_time());
                     client.set_activity(
                         Activity::new()
                             .timestamps(started_at.clone())
@@ -115,7 +124,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                             .details("Idle")
                             .state("Idle"),
                     )?;
-                    log("Updated activity", None);
+                    log("Updated activity: idle", None);
                     sleep();
                     xcode_is_running = check_xcode()?;
                     continue;
@@ -154,7 +163,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     .state(state);
 
                 client.set_activity(activity)?;
-                log("Updated activity", None);
+                log("Updated activity: working on a project", None);
 
                 sleep();
                 xcode_is_running = check_xcode()?
