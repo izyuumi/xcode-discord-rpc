@@ -11,10 +11,12 @@ use std::{
 };
 
 const WAIT_TIME: u64 = 30;
-const XCODE_CHECK_CYCLE: i8 = 5;
+const XCODE_CHECK_CYCLE: i8 = 1;
 
 const SHOW_FILE_ARG_ID: &str = "show_file";
 const SHOW_PROJECT_ARG_ID: &str = "show_project";
+
+const IDLE_DETERMINATION_TIME: i64 = 60;
 
 fn main() {
     // Parse command-line arguments
@@ -79,6 +81,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
             log("Connected to Discord", None);
             let mut started_at = Timestamps::new().start(current_time());
             let mut project_before = String::from("");
+            let mut last_frontmost_at = current_time();
 
             while xcode_is_running {
                 log("Xcode is running", None);
@@ -88,12 +91,17 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     String::from("")
                 };
 
+                if is_xcode_frontmost()? {
+                    last_frontmost_at = current_time();
+                }
+                let is_idle = current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME;
+
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time());
                     project_before = project.clone();
                 }
 
-                if project.is_empty() {
+                if project.is_empty() || is_idle {
                     client.set_activity(
                         Activity::new()
                             .timestamps(started_at.clone())
@@ -209,6 +217,20 @@ fn current_project() -> Result<String, Box<dyn std::error::Error>> {
         return Ok(project.replace("workspace document ", ""));
     }
     Ok(project)
+}
+
+/// Check if frontmost application is Xcode
+fn is_xcode_frontmost() -> Result<bool, Box<dyn std::error::Error>> {
+    let frontmost_app = run_osascript(
+        r#"
+        if frontmost of application "Xcode" is true then
+            return "Xcode"
+        end if
+    "#,
+    )?
+    .trim()
+    .to_string();
+    Ok(frontmost_app == "Xcode")
 }
 
 /// Execute an AppleScript command using osascript and returns the output as a String
