@@ -10,8 +10,18 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(not(debug_assertions))]
 const WAIT_TIME: u64 = 30;
+#[cfg(debug_assertions)]
+const WAIT_TIME: u64 = 3;
+#[cfg(debug_assertions)]
+const XCODE_CHECK_CYCLE: i8 = 1;
+#[cfg(not(debug_assertions))]
 const XCODE_CHECK_CYCLE: i8 = 5;
+#[cfg(debug_assertions)]
+const IDLE_DETERMINATION_TIME: i64 = 5;
+#[cfg(not(debug_assertions))]
+const IDLE_DETERMINATION_TIME: i64 = 10;
 
 const SHOW_FILE_ARG_ID: &str = "show_file";
 const SHOW_PROJECT_ARG_ID: &str = "show_project";
@@ -79,6 +89,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
             log("Connected to Discord", None);
             let mut started_at = Timestamps::new().start(current_time());
             let mut project_before = String::from("");
+            let mut last_frontmost_at = current_time();
 
             while xcode_is_running {
                 log("Xcode is running", None);
@@ -88,12 +99,18 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     String::from("")
                 };
 
+                if is_xcode_frontmost()? {
+                    last_frontmost_at = current_time();
+                }
+                let is_idle = current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME;
+
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time());
                     project_before = project.clone();
                 }
 
-                if project.is_empty() {
+                if project.is_empty() || is_idle {
+                    started_at = Timestamps::new().start(current_time());
                     client.set_activity(
                         Activity::new()
                             .timestamps(started_at.clone())
@@ -107,7 +124,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                             .details("Idle")
                             .state("Idle"),
                     )?;
-                    log("Updated activity", None);
+                    log("Updated activity: idle", None);
                     sleep();
                     xcode_is_running = check_xcode()?;
                     continue;
@@ -146,13 +163,13 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     .state(state);
 
                 client.set_activity(activity)?;
-                log("Updated activity", None);
+                log("Updated activity: working on a project", None);
 
                 sleep();
                 xcode_is_running = check_xcode()?
             }
         } else {
-            log("Xcode is not running", None)
+            log("Discord is not running", None)
         }
         sleep()
     }
@@ -209,6 +226,20 @@ fn current_project() -> Result<String, Box<dyn std::error::Error>> {
         return Ok(project.replace("workspace document ", ""));
     }
     Ok(project)
+}
+
+/// Check if frontmost application is Xcode
+fn is_xcode_frontmost() -> Result<bool, Box<dyn std::error::Error>> {
+    let frontmost_app = run_osascript(
+        r#"
+        if frontmost of application "Xcode" is true then
+            return "Xcode"
+        end if
+    "#,
+    )?
+    .trim()
+    .to_string();
+    Ok(frontmost_app == "Xcode")
 }
 
 /// Execute an AppleScript command using osascript and returns the output as a String
