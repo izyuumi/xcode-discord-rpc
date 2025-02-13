@@ -87,11 +87,7 @@ jobs:
           file: ./xcode-discord-rpc.tar.gz
           asset_name: xcode-discord-rpc.tar.gz
           tag: ${{ steps.get_version.outputs.version }}
-          overwrite: true
-          body: |
-            # Changelog
-            ${{ steps.get_version.outputs.version }}
-            ${{ steps.create_release.outputs.html_url }}
+          overwrite: true 
 
       - name: Bump Homebrew
         if: ${{ steps.release.outputs.release_created }}
