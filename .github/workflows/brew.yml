@@ -7,6 +7,7 @@ on:
 
 jobs:
   release:
+    if: ${{ github.event.release.tag_name != '' }}
     strategy:
       fail-fast: false
     runs-on: ubuntu-latest-arm64
