@@ -10,7 +10,7 @@ jobs:
     if: ${{ github.event.release.tag_name != '' }}
     strategy:
       fail-fast: false
-    runs-on: ubuntu-latest-arm64
+    runs-on: ubuntu-latest
     env:
       CARGO_PROFILE_RELEASE_LTO: true
       CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1

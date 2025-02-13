@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
 use chrono::Local;
-use clap::{Arg, ArgAction, Command as ClapCommand};
+
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
     DiscordIpc, DiscordIpcClient,
@@ -12,54 +12,21 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-#[cfg(not(debug_assertions))]
-const WAIT_TIME: u64 = 30;
-#[cfg(debug_assertions)]
-const WAIT_TIME: u64 = 3;
-#[cfg(debug_assertions)]
-const XCODE_CHECK_CYCLE: i8 = 1;
-#[cfg(not(debug_assertions))]
-const XCODE_CHECK_CYCLE: i8 = 5;
-#[cfg(debug_assertions)]
-const IDLE_DETERMINATION_TIME: i64 = 5;
-#[cfg(not(debug_assertions))]
-const IDLE_DETERMINATION_TIME: i64 = 10;
+use crate::error::{Error, Result};
 
-const SHOW_FILE_ARG_ID: &str = "show_file";
-const SHOW_PROJECT_ARG_ID: &str = "show_project";
+mod clap;
+mod config;
+mod error;
 
-fn main() {
-    let matches = ClapCommand::new("Xcode Discord RPC")
-        .version(clap::crate_version!())
-        .author(clap::crate_authors!())
-        .about("Displays Xcode status on Discord Rich Presence")
-        .arg(
-            Arg::new(SHOW_FILE_ARG_ID)
-                .short('f')
-                .long("show-file")
-                .num_args(0)
-                .action(ArgAction::SetFalse)
-                .help("Hide current file in Discord Rich Presence")
-                .default_value("true"),
-        )
-        .arg(
-            Arg::new(SHOW_PROJECT_ARG_ID)
-                .short('p')
-                .long("show-project")
-                .num_args(0)
-                .action(ArgAction::SetFalse)
-                .help("Hide current project in Discord Rich Presence")
-                .default_value("true"),
-        )
-        .get_matches();
+fn main() -> crate::Result<()> {
+    simple_logger::SimpleLogger::new()
+        .with_utc_timestamps()
+        .init()?;
 
-    let (show_file, show_project) = (
-        matches.get_flag(SHOW_FILE_ARG_ID),
-        matches.get_flag(SHOW_PROJECT_ARG_ID),
-    );
+    let clap_flags: clap::ClapFlags = clap::init();
 
     loop {
-        if let Err(err) = discord_rpc(show_file, show_project) {
+        if let Err(err) = discord_rpc(clap_flags) {
             log("Failed to connect to Discord", Some(&err.to_string()));
             log("Trying to reconnect...", None);
             sleep()
@@ -68,14 +35,19 @@ fn main() {
     }
 }
 
-fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::error::Error>> {
+fn discord_rpc(clap_flags: clap::ClapFlags) -> Result<()> {
     let mut client = DiscordIpcClient::new("1158013054898950185")?;
 
     let mut xcode_is_running = false;
     let mut xcode_check_cycle_counter = 0;
 
+    let clap::ClapFlags {
+        show_file,
+        show_project,
+    } = clap_flags;
+
     loop {
-        if xcode_check_cycle_counter == XCODE_CHECK_CYCLE {
+        if xcode_check_cycle_counter == config::default::XCODE_CHECK_CYCLE {
             xcode_check_cycle_counter = 0;
             xcode_is_running = check_xcode()?;
             if !xcode_is_running {
@@ -105,7 +77,8 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     last_frontmost_at = current_time();
                 }
                 let is_idle_now =
-                    current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME as u128 * 1000;
+                    Duration::new((current_time() - last_frontmost_at) as u64 / 1000, 0)
+                        > config::default::IDLE_THRESHOLD;
 
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time() as i64);
@@ -189,7 +162,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
 }
 
 /// Check if Xcode is running
-fn check_xcode() -> Result<bool, Box<dyn std::error::Error>> {
+fn check_xcode() -> Result<bool> {
     let xcode_is_running = run_osascript(
         r#"
         tell application "System Events"
@@ -203,7 +176,7 @@ fn check_xcode() -> Result<bool, Box<dyn std::error::Error>> {
 }
 
 /// Get the current file's name as a String
-fn current_file() -> Result<String, Box<dyn std::error::Error>> {
+fn current_file() -> Result<String> {
     let file = run_osascript(
         r#"
         tell application "Xcode"
@@ -219,7 +192,7 @@ fn current_file() -> Result<String, Box<dyn std::error::Error>> {
 }
 
 /// Get the current project's name as a String
-fn current_project() -> Result<String, Box<dyn std::error::Error>> {
+fn current_project() -> Result<String> {
     let project = run_osascript(
         r#"
         tell application "Xcode"
@@ -239,7 +212,7 @@ fn current_project() -> Result<String, Box<dyn std::error::Error>> {
 }
 
 /// Check if frontmost application is Xcode
-fn is_xcode_frontmost() -> Result<bool, Box<dyn std::error::Error>> {
+fn is_xcode_frontmost() -> Result<bool> {
     let frontmost_app = run_osascript(
         r#"
         if frontmost of application "Xcode" is true then
@@ -253,16 +226,16 @@ fn is_xcode_frontmost() -> Result<bool, Box<dyn std::error::Error>> {
 }
 
 /// Execute an AppleScript command using osascript and returns the output as a String
-fn run_osascript(script: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn run_osascript(script: &str) -> Result<String> {
     let output = Command::new("osascript")
         .arg("-e")
         .arg(script)
         .output()
-        .expect("Failed to execute command");
+        .map_err(|err| Error::Osascript(err.to_string()))?;
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
-/// Get the current time in miliseconds since the UNIX epoch as a 64-bit integer
+/// Get the current time in miliseconds since the UNIX epoch as unsigned 128 integer
 fn current_time() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -279,7 +252,7 @@ fn log(message: &str, error: Option<&str>) {
     }
 }
 
-/// Sleep for WAIT_TIME seconds
+/// Sleep for UPDATE_INTERVAL
 fn sleep() {
-    thread::sleep(Duration::from_secs(WAIT_TIME))
+    thread::sleep(config::default::UPDATE_INTERVAL)
 }
