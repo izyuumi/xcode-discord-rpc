@@ -12,6 +12,7 @@ use std::{
 
 const WAIT_TIME: u64 = 30;
 const XCODE_CHECK_CYCLE: i8 = 5;
+const IDLE_THREASHOLD: i64 = 25;
 
 const SHOW_FILE_ARG_ID: &str = "show_file";
 const SHOW_PROJECT_ARG_ID: &str = "show_project";
@@ -79,6 +80,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
             log("Connected to Discord", None);
             let mut started_at = Timestamps::new().start(current_time());
             let mut project_before = String::from("");
+            let mut last_frontmost_at = current_time();
 
             while xcode_is_running {
                 log("Xcode is running", None);
@@ -87,6 +89,11 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 } else {
                     String::from("")
                 };
+
+                if is_xcode_frontmost()? {
+                    last_frontmost_at = current_time();
+                }
+                let is_idle = current_time() - last_frontmost_at > IDLE_THREASHOLD;
 
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time());
@@ -241,4 +248,18 @@ fn log(message: &str, error: Option<&str>) {
 /// Sleep for WAIT_TIME seconds
 fn sleep() {
     thread::sleep(Duration::from_secs(WAIT_TIME))
+}
+
+/// Check if frontmost application is Xcode
+fn is_xcode_frontmost() -> Result<bool, Box<dyn std::error::Error>> {
+    let frontmost_app = run_osascript(
+        r#"
+        if frontmost of application "Xcode" is true then
+            return "Xcode"
+        end if
+    "#,
+    )?
+    .trim()
+    .to_string();
+    Ok(frontmost_app == "Xcode")
 }
