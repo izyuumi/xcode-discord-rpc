@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.2.3...v0.2.4) (2025-02-13)
+
+
+### Bug Fixes
+
+* update current_time function to return milliseconds and adjust related calculations ([b85ded9](https://github.com/izyuumi/xcode-discord-rpc/commit/b85ded95b43644b84982eff5ab8ace12ff2c51bd))
+
 ## [0.2.3](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.2.2...v0.2.3) (2025-02-13)
 
 
