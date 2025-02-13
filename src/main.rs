@@ -100,7 +100,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     project_before = project.clone();
                 }
 
-                if project.is_empty() {
+                if project.is_empty() || is_idle {
                     client.set_activity(
                         Activity::new()
                             .timestamps(started_at.clone())
@@ -159,7 +159,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 xcode_is_running = check_xcode()?
             }
         } else {
-            log("Xcode is not running", None)
+            log("Discord is not running", None)
         }
         sleep()
     }
