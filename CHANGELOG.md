@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.1...v0.3.2) (2025-02-13)
+
+
+### Bug Fixes
+
+* remove redundant create release step in brew.yml workflow ([e70a345](https://github.com/izyuumi/xcode-discord-rpc/commit/e70a345a83cc4f24c7a05b561c537c9a9ef8f863))
+
 ## [0.3.1](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.0...v0.3.1) (2025-02-13)
 
 
