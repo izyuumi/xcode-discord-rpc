@@ -114,7 +114,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                             .details("Idle")
                             .state("Idle"),
                     )?;
-                    log("Updated activity", None);
+                    log("Updated activity: idle", None);
                     sleep();
                     xcode_is_running = check_xcode()?;
                     continue;
@@ -153,7 +153,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     .state(state);
 
                 client.set_activity(activity)?;
-                log("Updated activity", None);
+                log("Updated activity: working on a project", None);
 
                 sleep();
                 xcode_is_running = check_xcode()?
