@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.0...v0.3.1) (2025-02-13)
+
+
+### Bug Fixes
+
+* update version retrieval in brew.yml workflow ([8f0aaf2](https://github.com/izyuumi/xcode-discord-rpc/commit/8f0aaf269bfb02203f1499a30e5b7e51db296bb6))
+
 ## [0.3.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.2.1...v0.3.0) (2025-02-13)
 
 
