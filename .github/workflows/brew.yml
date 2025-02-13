@@ -79,18 +79,6 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         run: cp target/release/universal/xcode-discord-rpc.tar.gz .
 
-      - name: Create Release
-        if: ${{ steps.release.outputs.release_created }}
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          release_name: "Release ${{ steps.get_version.outputs.version }}"
-          draft: false
-          prerelease: false
-
       - name: Upload Release Asset
         if: ${{ steps.release.outputs.release_created }}
         uses: svenstaro/upload-release-action@v2
