@@ -17,8 +17,6 @@ jobs:
         id: release
         with:
           release-type: rust
-          package-name: xcode-discord-rpc
-          include-v-in-tag: true
           
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}

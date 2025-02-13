@@ -102,7 +102,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 if is_xcode_frontmost()? {
                     last_frontmost_at = current_time();
                 }
-                let is_idle = current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME;
+                let is_idle = current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME * 1000;
 
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time());
@@ -257,7 +257,7 @@ fn current_time() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Failed to obtain current time")
-        .as_secs() as i64
+        .as_millis() as i64
 }
 
 /// Standardized logging function
