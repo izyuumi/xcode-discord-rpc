@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use chrono::Local;
 use clap::{Arg, ArgAction, Command as ClapCommand};
 use discord_rich_presence::{
@@ -27,7 +29,6 @@ const SHOW_FILE_ARG_ID: &str = "show_file";
 const SHOW_PROJECT_ARG_ID: &str = "show_project";
 
 fn main() {
-    // Parse command-line arguments
     let matches = ClapCommand::new("Xcode Discord RPC")
         .version(clap::crate_version!())
         .author(clap::crate_authors!())
@@ -162,7 +163,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 let state = if show_project {
                     &format!("in {}", project)
                 } else {
-                    "in a Project"
+                    "in a project"
                 };
 
                 let activity = Activity::new()
