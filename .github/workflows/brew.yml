@@ -2,9 +2,8 @@
 name: auto-brew
 
 on:
-  push:
-    tags:
-      - '*'
+  release:
+    types: [published, released]
 
 jobs:
   release:
