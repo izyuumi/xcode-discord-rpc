@@ -87,7 +87,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
 
         if client.connect().is_ok() {
             log("Connected to Discord", None);
-            let mut started_at = Timestamps::new().start(current_time());
+            let mut started_at = Timestamps::new().start(current_time() as i64);
             let mut project_before = String::from("");
             let mut last_frontmost_at = current_time();
             let mut is_idle = false;
@@ -104,17 +104,17 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     last_frontmost_at = current_time();
                 }
                 let is_idle_now =
-                    current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME * 1000;
+                    current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME as u128 * 1000;
 
                 if !project_before.eq(&project) {
-                    started_at = Timestamps::new().start(current_time());
+                    started_at = Timestamps::new().start(current_time() as i64);
                     project_before = project.clone();
                 }
 
                 if project.is_empty() || is_idle_now {
                     if !is_idle {
                         is_idle = true;
-                        started_at = Timestamps::new().start(current_time());
+                        started_at = Timestamps::new().start(current_time() as i64);
                     }
                     client.set_activity(
                         Activity::new()
@@ -261,12 +261,12 @@ fn run_osascript(script: &str) -> Result<String, Box<dyn std::error::Error>> {
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
-/// Get the current time in seconds since the UNIX epoch as a 64-bit integer
-fn current_time() -> i64 {
+/// Get the current time in miliseconds since the UNIX epoch as a 64-bit integer
+fn current_time() -> u128 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Failed to obtain current time")
-        .as_millis() as i64
+        .as_millis()
 }
 
 /// Standardized logging function
