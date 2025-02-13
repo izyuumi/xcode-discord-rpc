@@ -90,6 +90,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
             let mut started_at = Timestamps::new().start(current_time());
             let mut project_before = String::from("");
             let mut last_frontmost_at = current_time();
+            let mut is_idle = false;
 
             while xcode_is_running {
                 log("Xcode is running", None);
@@ -102,15 +103,19 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 if is_xcode_frontmost()? {
                     last_frontmost_at = current_time();
                 }
-                let is_idle = current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME * 1000;
+                let is_idle_now =
+                    current_time() - last_frontmost_at > IDLE_DETERMINATION_TIME * 1000;
 
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time());
                     project_before = project.clone();
                 }
 
-                if project.is_empty() || is_idle {
-                    started_at = Timestamps::new().start(current_time());
+                if project.is_empty() || is_idle_now {
+                    if !is_idle {
+                        is_idle = true;
+                        started_at = Timestamps::new().start(current_time());
+                    }
                     client.set_activity(
                         Activity::new()
                             .timestamps(started_at.clone())
@@ -128,6 +133,10 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                     sleep();
                     xcode_is_running = check_xcode()?;
                     continue;
+                }
+
+                if is_idle {
+                    is_idle = false;
                 }
 
                 let mut keys = ("Xcode", "xcode");
