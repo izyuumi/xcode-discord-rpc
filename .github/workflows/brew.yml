@@ -3,8 +3,8 @@ name: auto-brew
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main 
 
 jobs:
   release:
@@ -15,12 +15,21 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: rust
+
       - uses: actions/checkout@v3
+        if: ${{ steps.release.outputs.release_created }}
+
       - name: Get version
+        if: ${{ steps.release.outputs.release_created }}
         id: get_version
         run: echo "version=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
 
       - name: Restore Cargo Cache
+        if: ${{ steps.release.outputs.release_created }}
         uses: Swatinem/rust-cache@v2
         env:
           cache-name: ci
@@ -28,20 +37,25 @@ jobs:
           shared-key: ${{ matrix.os }}-${{ env.cache-name }}-stable
 
       - name: Install Rust
+        if: ${{ steps.release.outputs.release_created }}
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
 
       - name: Install Rust Targets
+        if: ${{ steps.release.outputs.release_created }}
         run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
 
       - name: Build for x86_64
+        if: ${{ steps.release.outputs.release_created }}
         run: cargo build --release --target x86_64-apple-darwin
 
       - name: Build for arm64
+        if: ${{ steps.release.outputs.release_created }}
         run: cargo build --release --target aarch64-apple-darwin
 
       - name: Create Universal Binary
+        if: ${{ steps.release.outputs.release_created }}
         run: |
           mkdir -p target/release/universal
           lipo -create -output target/release/universal/xcode-discord-rpc \
@@ -49,20 +63,24 @@ jobs:
             target/aarch64-apple-darwin/release/xcode-discord-rpc
 
       - name: Archive Universal Binary
+        if: ${{ steps.release.outputs.release_created }}
         run: |
           cd target/release/universal
           tar -czvf xcode-discord-rpc.tar.gz xcode-discord-rpc
           cd ../../..
 
       - name: Set SHA
+        if: ${{ steps.release.outputs.release_created }}
         id: shasum
         run: |
           echo sha="$(shasum -a 256 ./target/release/universal/xcode-discord-rpc.tar.gz | awk '{printf $1}')" >> $GITHUB_OUTPUT
 
       - name: Copy Archive to Home
+        if: ${{ steps.release.outputs.release_created }}
         run: cp target/release/universal/xcode-discord-rpc.tar.gz .
 
       - name: Create Release
+        if: ${{ steps.release.outputs.release_created }}
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -74,6 +92,7 @@ jobs:
           prerelease: false
 
       - name: Upload Release Asset
+        if: ${{ steps.release.outputs.release_created }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -87,6 +106,7 @@ jobs:
             ${{ steps.create_release.outputs.html_url }}
 
       - name: Bump Homebrew
+        if: ${{ steps.release.outputs.release_created }}
         uses: mislav/bump-homebrew-formula-action@v3
         with:
           formula-name: xcode-discord-rpc
