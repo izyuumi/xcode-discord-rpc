@@ -78,7 +78,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
 
         if client.connect().is_ok() {
             log("Connected to Discord", None);
-            let mut started_at = Timestamps::new().start(current_time());
+            let mut started_at = Timestamps::new().start(current_time() * 1000);
             let mut project_before = String::from("");
             let mut last_frontmost_at = current_time();
 
@@ -96,7 +96,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 let is_idle = current_time() - last_frontmost_at > IDLE_THREASHOLD;
 
                 if !project_before.eq(&project) {
-                    started_at = Timestamps::new().start(current_time());
+                    started_at = Timestamps::new().start(current_time() * 1000);
                     project_before = project.clone();
                 }
 
