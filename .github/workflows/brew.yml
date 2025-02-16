@@ -94,9 +94,9 @@ jobs:
         uses: mislav/bump-homebrew-formula-action@v3
         with:
           formula-name: xcode-discord-rpc
-          homebrew-tap: izyumidev/homebrew-xcode-discord-rpc
+          homebrew-tap: izyuumi/homebrew-xcode-discord-rpc
           commit-message: "Release ${{ steps.get_version.outputs.version }}"
-          download-url: https://github.com/izyumidev/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz
+          download-url: https://github.com/izyuumi/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz
         env:
           COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
