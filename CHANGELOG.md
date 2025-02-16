@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.3...v0.3.4) (2025-02-16)
+
+
+### Bug Fixes
+
+* update homebrew tap and download URL in brew.yml workflow ([de5c6d1](https://github.com/izyuumi/xcode-discord-rpc/commit/de5c6d198e55b002d6c8d6e1b2b76378f76dc6d5))
+
 ## [0.3.3](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.2...v0.3.3) (2025-02-16)
 
 
