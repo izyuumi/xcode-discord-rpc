@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.2...v0.3.3) (2025-02-16)
+
+
+### Bug Fixes
+
+* activity timestamps needs to be in milliseconds ([ccb6a52](https://github.com/izyuumi/xcode-discord-rpc/commit/ccb6a52aa2676b8ab11ee19b13e28e5ed1d9cc6a)), closes [#10](https://github.com/izyuumi/xcode-discord-rpc/issues/10)
+* no need to change release body ([206e94b](https://github.com/izyuumi/xcode-discord-rpc/commit/206e94b1134ad50e1303e6ccd96b5184bcce85d6))
+
 ## [0.3.2](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.1...v0.3.2) (2025-02-13)
 
 
