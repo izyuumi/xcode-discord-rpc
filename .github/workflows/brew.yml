@@ -97,6 +97,7 @@ jobs:
           homebrew-tap: izyuumi/homebrew-xcode-discord-rpc
           commit-message: "Release ${{ steps.get_version.outputs.version }}"
           download-url: https://github.com/izyuumi/xcode-discord-rpc/releases/download/${{ steps.get_version.outputs.version }}/xcode-discord-rpc.tar.gz
+          tag-name: ${{ steps.get_version.outputs.version }}
         env:
           COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
