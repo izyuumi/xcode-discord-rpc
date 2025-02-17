@@ -9,6 +9,10 @@ use std::{
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+mod error;
+
+#[allow(unused)]
+pub(crate) use error::{Error, Result};
 
 const WAIT_TIME: u64 = 30;
 const XCODE_CHECK_CYCLE: i8 = 5;
@@ -169,7 +173,7 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
 }
 
 /// Check if Xcode is running
-fn check_xcode() -> Result<bool, Box<dyn std::error::Error>> {
+fn check_xcode() -> Result<bool> {
     let xcode_is_running = run_osascript(
         r#"
         tell application "System Events"
@@ -183,7 +187,7 @@ fn check_xcode() -> Result<bool, Box<dyn std::error::Error>> {
 }
 
 /// Get the current file's name as a String
-fn current_file() -> Result<String, Box<dyn std::error::Error>> {
+fn current_file() -> Result<String> {
     let file = run_osascript(
         r#"
         tell application "Xcode"
@@ -199,7 +203,7 @@ fn current_file() -> Result<String, Box<dyn std::error::Error>> {
 }
 
 /// Get the current project's name as a String
-fn current_project() -> Result<String, Box<dyn std::error::Error>> {
+fn current_project() -> Result<String> {
     let project = run_osascript(
         r#"
         tell application "Xcode"
@@ -219,7 +223,7 @@ fn current_project() -> Result<String, Box<dyn std::error::Error>> {
 }
 
 /// Execute an AppleScript command using osascript and returns the output as a String
-fn run_osascript(script: &str) -> Result<String, Box<dyn std::error::Error>> {
+fn run_osascript(script: &str) -> Result<String> {
     let output = Command::new("osascript")
         .arg("-e")
         .arg(script)
@@ -251,7 +255,7 @@ fn sleep() {
 }
 
 /// Check if frontmost application is Xcode
-fn is_xcode_frontmost() -> Result<bool, Box<dyn std::error::Error>> {
+fn is_xcode_frontmost() -> Result<bool> {
     let frontmost_app = run_osascript(
         r#"
         if frontmost of application "Xcode" is true then
