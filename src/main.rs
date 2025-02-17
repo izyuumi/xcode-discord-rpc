@@ -1,5 +1,5 @@
 use chrono::Local;
-use clap::{Arg, ArgAction, Command as ClapCommand};
+use config::AppConfig;
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
     DiscordIpc, DiscordIpcClient,
@@ -9,72 +9,43 @@ use std::{
     thread,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+
+mod config;
 mod error;
 
 #[allow(unused)]
 pub(crate) use error::{Error, Result};
 
-const WAIT_TIME: u64 = 30;
-const XCODE_CHECK_CYCLE: i8 = 5;
-const IDLE_THREASHOLD: i64 = 25;
-
-const SHOW_FILE_ARG_ID: &str = "show_file";
-const SHOW_PROJECT_ARG_ID: &str = "show_project";
-
 fn main() {
-    // Parse command-line arguments
-    let matches = ClapCommand::new("Xcode Discord RPC")
-        .version(clap::crate_version!())
-        .author(clap::crate_authors!())
-        .about("Displays Xcode status on Discord Rich Presence")
-        .arg(
-            Arg::new(SHOW_FILE_ARG_ID)
-                .short('f')
-                .long("show-file")
-                .num_args(0)
-                .action(ArgAction::SetFalse)
-                .help("Hide current file in Discord Rich Presence")
-                .default_value("true"),
-        )
-        .arg(
-            Arg::new(SHOW_PROJECT_ARG_ID)
-                .short('p')
-                .long("show-project")
-                .num_args(0)
-                .action(ArgAction::SetFalse)
-                .help("Hide current project in Discord Rich Presence")
-                .default_value("true"),
-        )
-        .get_matches();
-
-    let (show_file, show_project) = (
-        matches.get_flag(SHOW_FILE_ARG_ID),
-        matches.get_flag(SHOW_PROJECT_ARG_ID),
-    );
+    let Ok(config) = AppConfig::new() else {
+        log("Failed to load configuration", None);
+        log("Exiting...", None);
+        std::process::exit(1);
+    };
 
     loop {
-        if let Err(err) = discord_rpc(show_file, show_project) {
+        if let Err(err) = discord_rpc(&config) {
             log("Failed to connect to Discord", Some(&err.to_string()));
             log("Trying to reconnect...", None);
-            sleep()
+            sleep(config.wait_time)
         }
-        sleep()
+        sleep(config.wait_time)
     }
 }
 
-fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::error::Error>> {
+fn discord_rpc(config: &AppConfig) -> Result<()> {
     let mut client = DiscordIpcClient::new("1158013054898950185")?;
 
     let mut xcode_is_running = false;
     let mut xcode_check_cycle_counter = 0;
 
     loop {
-        if xcode_check_cycle_counter == XCODE_CHECK_CYCLE {
+        if xcode_check_cycle_counter == config.xcode_check_cycle {
             xcode_check_cycle_counter = 0;
             xcode_is_running = check_xcode()?;
             if !xcode_is_running {
                 log("Xcode is not running", None);
-                sleep();
+                sleep(config.wait_time);
                 continue;
             }
         }
@@ -88,16 +59,16 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
 
             while xcode_is_running {
                 log("Xcode is running", None);
-                let project = if show_project {
-                    current_project()?
-                } else {
+                let project = if config.hide_project {
                     String::from("")
+                } else {
+                    current_project()?
                 };
 
                 if is_xcode_frontmost()? {
                     last_frontmost_at = current_time();
                 }
-                let is_idle = current_time() - last_frontmost_at > IDLE_THREASHOLD;
+                let is_idle = current_time() - last_frontmost_at > config.idle_threshold;
 
                 if !project_before.eq(&project) {
                     started_at = Timestamps::new().start(current_time() * 1000);
@@ -119,14 +90,16 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                             .state("Idle"),
                     )?;
                     log("Updated activity: idle", None);
-                    sleep();
+                    sleep(config.wait_time);
                     xcode_is_running = check_xcode()?;
                     continue;
                 }
 
                 let mut keys = ("Xcode", "xcode");
 
-                let details = if show_file {
+                let details = if config.hide_file {
+                    "Working on a file"
+                } else {
                     let file = current_file()?;
                     let file_extension = (file.split('.').last().unwrap_or("")).trim().to_string();
                     keys = match file_extension.as_str() {
@@ -140,14 +113,12 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                         _ => ("Xcode", "xcode"),
                     };
                     &format!("Working on {}", file)
-                } else {
-                    "Working on a file"
                 };
 
-                let state = if show_project {
-                    &format!("in {}", project)
-                } else {
+                let state = if config.hide_project {
                     "in a Project"
+                } else {
+                    &format!("in {}", project)
                 };
 
                 let activity = Activity::new()
@@ -159,13 +130,13 @@ fn discord_rpc(show_file: bool, show_project: bool) -> Result<(), Box<dyn std::e
                 client.set_activity(activity)?;
                 log("Updated activity: working on a project", None);
 
-                sleep();
+                sleep(config.wait_time);
                 xcode_is_running = check_xcode()?
             }
         } else {
-            log("Discord is not running", None)
+            log("Discord is not running", None);
         }
-        sleep()
+        sleep(config.wait_time);
     }
 
     #[allow(unreachable_code)]
@@ -250,8 +221,8 @@ fn log(message: &str, error: Option<&str>) {
 }
 
 /// Sleep for WAIT_TIME seconds
-fn sleep() {
-    thread::sleep(Duration::from_secs(WAIT_TIME))
+fn sleep(wait_time: u64) {
+    thread::sleep(Duration::from_secs(wait_time));
 }
 
 /// Check if frontmost application is Xcode
