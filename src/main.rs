@@ -34,7 +34,10 @@ fn main() {
 }
 
 fn discord_rpc(config: &AppConfig) -> Result<()> {
-    let mut client = DiscordIpcClient::new("1158013054898950185")?;
+    let mut client = match DiscordIpcClient::new("1158013054898950185") {
+        Ok(client) => client,
+        Err(err) => return Err(Error::DiscordIpc(err.to_string())),
+    };
 
     let mut xcode_is_running = false;
     let mut xcode_check_cycle_counter = 0;
