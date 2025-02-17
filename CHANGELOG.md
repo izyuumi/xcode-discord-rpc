@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.4...v0.3.5) (2025-02-17)
+
+
+### Bug Fixes
+
+* add tag name to homebrew workflow for release versioning ([0379766](https://github.com/izyuumi/xcode-discord-rpc/commit/0379766f9309db8dd12d8fdd4453b193e2e98a54))
+
 ## [0.3.4](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.3...v0.3.4) (2025-02-16)
 
 
