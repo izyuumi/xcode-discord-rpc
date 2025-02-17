@@ -16,11 +16,11 @@ mod error;
 #[allow(unused)]
 pub(crate) use error::{Error, Result};
 
-fn main() {
+fn main() -> Result<()> {
     let Ok(config) = AppConfig::new() else {
         log("Failed to load configuration", None);
         log("Exiting...", None);
-        std::process::exit(1);
+        return Err(Error::Custom("Failed to load configuration".to_string()));
     };
 
     loop {
@@ -31,6 +31,9 @@ fn main() {
         }
         sleep(config.wait_time)
     }
+
+    #[allow(unreachable_code)]
+    Ok(())
 }
 
 fn discord_rpc(config: &AppConfig) -> Result<()> {
