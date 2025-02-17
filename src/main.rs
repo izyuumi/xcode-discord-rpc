@@ -202,7 +202,7 @@ fn run_osascript(script: &str) -> Result<String> {
         .arg("-e")
         .arg(script)
         .output()
-        .expect("Failed to execute command");
+        .map_err(|err| Error::Oascript(err.to_string()))?;
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
