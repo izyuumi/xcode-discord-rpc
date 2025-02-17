@@ -12,9 +12,11 @@ use std::{
 
 mod config;
 mod error;
+mod utils;
 
 #[allow(unused)]
 pub(crate) use error::{Error, Result};
+use utils::file_language::{FileExtention, FileLanguage, ToFileLanguage};
 
 fn main() -> Result<()> {
     let Ok(config) = AppConfig::new() else {
@@ -87,10 +89,8 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
                             .timestamps(started_at.clone())
                             .assets(
                                 Assets::new()
-                                    .large_image("xcode")
-                                    .large_text("Xcode")
-                                    .small_image("xcode")
-                                    .small_text("Xcode"),
+                                    .large_text(&FileLanguage::Unknown.get_text_asset_key())
+                                    .large_image(&FileLanguage::Unknown.get_image_asset_key()),
                             )
                             .details("Idle")
                             .state("Idle"),
@@ -101,23 +101,14 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
                     continue;
                 }
 
-                let mut keys = ("Xcode", "xcode");
+                let mut keys = FileLanguage::Unknown.get_asset_keys();
 
                 let details = if config.hide_file {
                     "Working on a file"
                 } else {
                     let file = current_file()?;
-                    let file_extension = (file.split('.').last().unwrap_or("")).trim().to_string();
-                    keys = match file_extension.as_str() {
-                        "swift" => ("Swift", "swift"),
-                        "cpp" | "cp" | "cxx" => ("C++", "cpp"),
-                        "c" => ("C", "c"),
-                        "rb" => ("Ruby", "ruby"),
-                        "java" => ("Java", "java"),
-                        "json" => ("JSON", "json"),
-                        "metal" => ("Metal", "metal"),
-                        _ => ("Xcode", "xcode"),
-                    };
+                    let file_extension = file.get_file_extension();
+                    keys = file_extension.to_file_language().get_asset_keys();
                     &format!("Working on {}", file)
                 };
 
@@ -129,7 +120,7 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
 
                 let activity = Activity::new()
                     .timestamps(started_at.clone())
-                    .assets(Assets::new().large_image(keys.1).large_text(keys.0))
+                    .assets(Assets::new().large_text(keys.0).large_image(keys.1))
                     .details(details)
                     .state(state);
 
@@ -205,7 +196,7 @@ fn run_osascript(script: &str) -> Result<String> {
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-/// Get the current time in seconds since the UNIX epoch as a 64-bit integer
+/// Get the current time in seconds since the UNIX epoch as `i64`
 fn current_time() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -222,7 +213,7 @@ fn log(message: &str, error: Option<&str>) {
     }
 }
 
-/// Sleep for WAIT_TIME seconds
+/// Sleep for `Config::wait_time` seconds
 fn sleep(wait_time: u64) {
     thread::sleep(Duration::from_secs(wait_time));
 }
