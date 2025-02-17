@@ -154,9 +154,7 @@ fn check_xcode() -> Result<bool> {
             set xcodeIsRunning to exists (processes where name is "Xcode")
         end tell
     "#,
-    )?
-    .trim()
-    .to_string();
+    )?;
     Ok(xcode_is_running == "true")
 }
 
@@ -184,9 +182,7 @@ fn current_project() -> Result<String> {
             return active workspace document
         end tell
     "#,
-    )?
-    .trim()
-    .to_string();
+    )?;
     if project == "missing value" {
         return Ok(String::new());
     }
@@ -203,7 +199,7 @@ fn run_osascript(script: &str) -> Result<String> {
         .arg(script)
         .output()
         .map_err(|err| Error::Oascript(err.to_string()))?;
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
 /// Get the current time in seconds since the UNIX epoch as a 64-bit integer
@@ -236,8 +232,6 @@ fn is_xcode_frontmost() -> Result<bool> {
             return "Xcode"
         end if
     "#,
-    )?
-    .trim()
-    .to_string();
+    )?;
     Ok(frontmost_app == "Xcode")
 }
