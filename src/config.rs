@@ -9,7 +9,9 @@ const HIDE_PROJECT_ARG_ID: &str = "hide_project";
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct AppConfig {
-    pub wait_time: u64,
+    /// Interval in seconds for checking status
+    pub update_interval: u64,
+    /// Number of update cycles before re-checking if Xcode is running
     pub xcode_check_cycle: i8,
     /// Threshold in seconds for considering the user idle status
     pub idle_threshold: i64,

@@ -27,9 +27,9 @@ fn main() -> Result<()> {
         if let Err(err) = discord_rpc(&config) {
             log("Failed to connect to Discord", Some(&err.to_string()));
             log("Trying to reconnect...", None);
-            sleep(config.wait_time)
+            sleep(config.update_interval)
         }
-        sleep(config.wait_time)
+        sleep(config.update_interval)
     }
 
     #[allow(unreachable_code)]
@@ -51,7 +51,7 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
             xcode_is_running = check_xcode()?;
             if !xcode_is_running {
                 log("Xcode is not running", None);
-                sleep(config.wait_time);
+                sleep(config.update_interval);
                 continue;
             }
         }
@@ -96,7 +96,7 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
                             .state("Idle"),
                     )?;
                     log("Updated activity: idle", None);
-                    sleep(config.wait_time);
+                    sleep(config.update_interval);
                     xcode_is_running = check_xcode()?;
                     continue;
                 }
@@ -136,13 +136,13 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
                 client.set_activity(activity)?;
                 log("Updated activity: working on a project", None);
 
-                sleep(config.wait_time);
+                sleep(config.update_interval);
                 xcode_is_running = check_xcode()?
             }
         } else {
             log("Discord is not running", None);
         }
-        sleep(config.wait_time);
+        sleep(config.update_interval);
     }
 
     #[allow(unreachable_code)]
