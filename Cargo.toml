@@ -11,6 +11,12 @@ readme = "README.md"
 keywords = ["xcode", "discord", "rich", "presence", "rpc"]
 categories = ["development-tools"]
 
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+
 [dependencies]
 discord-rich-presence = "0.2.3"
 chrono = "0.4.31"
