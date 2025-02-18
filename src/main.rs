@@ -21,10 +21,7 @@ use utils::file_language::{FileExtention, FileLanguage, ToFileLanguage};
 fn main() -> Result<()> {
     SimpleLogger::new().init()?;
 
-    let Ok(config) = AppConfig::new() else {
-        log::warn!("Failed to load configuration");
-        return Err(Error::Custom("Failed to load configuration".to_string()));
-    };
+    let config = AppConfig::new()?;
 
     loop {
         if let Err(err) = discord_rpc(&config) {
