@@ -1,6 +1,6 @@
 /// Represents the different file languages supported
 #[derive(Debug)]
-pub(crate) enum FileLanguage {
+pub enum FileLanguage {
     /// Swift
     Swift,
     /// C++
@@ -21,7 +21,7 @@ pub(crate) enum FileLanguage {
 
 impl FileLanguage {
     /// Returns the asset key and text for the `FileLanguage` as (text, image)
-    pub(crate) fn get_asset_keys(&self) -> (&'static str, &'static str) {
+    pub fn get_asset_keys(&self) -> (&'static str, &'static str) {
         match self {
             FileLanguage::Swift => ("Swift", "swift"),
             FileLanguage::Cpp => ("C++", "cpp"),
@@ -35,18 +35,18 @@ impl FileLanguage {
     }
 
     /// Returns the text for the `FileLanguage`
-    pub(crate) fn get_text_asset_key(&self) -> &'static str {
+    pub fn get_text_asset_key(&self) -> &'static str {
         self.get_asset_keys().0
     }
 
     /// Returns the asset key for the `FileLanguage`
-    pub(crate) fn get_image_asset_key(&self) -> &'static str {
+    pub fn get_image_asset_key(&self) -> &'static str {
         self.get_asset_keys().1
     }
 }
 
 /// Trait for converting types to `FileLanguage`
-pub(crate) trait ToFileLanguage {
+pub trait ToFileLanguage {
     /// Converts the implementing type to a `FileLanguage`
     fn to_file_language(&self) -> FileLanguage;
 }
@@ -69,7 +69,7 @@ impl ToFileLanguage for str {
 }
 
 /// Trait for getting file extensions
-pub(crate) trait FileExtention {
+pub trait FileExtention {
     fn get_file_extension(&self) -> String;
 }
 

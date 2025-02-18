@@ -8,7 +8,7 @@ const HIDE_FILE_ARG_ID: &str = "hide_file";
 const HIDE_PROJECT_ARG_ID: &str = "hide_project";
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct AppConfig {
+pub struct AppConfig {
     /// Interval in seconds for checking status
     pub update_interval: u64,
     /// Number of update cycles before re-checking if Xcode is running
@@ -22,7 +22,7 @@ pub(crate) struct AppConfig {
 }
 
 impl AppConfig {
-    pub(crate) fn new() -> crate::Result<Self> {
+    pub fn new() -> crate::Result<Self> {
         let clap_matches = Self::get_clap_matches();
 
         let c = Config::builder()

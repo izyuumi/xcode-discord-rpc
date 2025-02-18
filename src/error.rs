@@ -1,7 +1,7 @@
-pub(crate) type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum Error {
+pub enum Error {
     #[error("Config error: {0}")]
     Config(#[from] config::ConfigError),
     #[error("DiscordIPC error: {0}")]
