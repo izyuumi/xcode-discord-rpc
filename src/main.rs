@@ -14,13 +14,23 @@ pub use error::{Error, Result};
 use utils::{file_language::*, osascript::*, *};
 
 fn main() -> Result<()> {
-    SimpleLogger::new().init()?;
+    #[cfg(debug_assertions)]
+    SimpleLogger::new()
+        .with_level(log::LevelFilter::Debug)
+        .init()?;
+
+    #[cfg(not(debug_assertions))]
+    SimpleLogger::new()
+        .with_level(log::LevelFilter::Info)
+        .init()?;
 
     let config = AppConfig::new()?;
 
+    log::info!("Starting Discord Rich Presence");
+
     loop {
         if let Err(err) = discord_rpc(&config) {
-            log::warn!("Failed to connect to Discord: {err}");
+            log::error!("{}", err);
             log::debug!("Trying to reconnect...");
             sleep(config.update_interval)
         }
@@ -42,7 +52,7 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
             xcode_check_cycle_counter = 0;
             xcode_is_running = check_xcode()?;
             if !xcode_is_running {
-                log::info!("Xcode is not running");
+                log::debug!("Xcode is not running");
                 sleep(config.update_interval);
                 continue;
             }
