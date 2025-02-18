@@ -1,9 +1,9 @@
-use chrono::Local;
 use config::AppConfig;
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
     DiscordIpc, DiscordIpcClient,
 };
+use simple_logger::SimpleLogger;
 use std::{
     process::Command,
     thread,
@@ -19,16 +19,17 @@ pub(crate) use error::{Error, Result};
 use utils::file_language::{FileExtention, FileLanguage, ToFileLanguage};
 
 fn main() -> Result<()> {
+    SimpleLogger::new().init()?;
+
     let Ok(config) = AppConfig::new() else {
-        log("Failed to load configuration", None);
-        log("Exiting...", None);
+        log::warn!("Failed to load configuration");
         return Err(Error::Custom("Failed to load configuration".to_string()));
     };
 
     loop {
         if let Err(err) = discord_rpc(&config) {
-            log("Failed to connect to Discord", Some(&err.to_string()));
-            log("Trying to reconnect...", None);
+            log::warn!("Failed to connect to Discord: {err}");
+            log::debug!("Trying to reconnect...");
             sleep(config.update_interval)
         }
         sleep(config.update_interval)
@@ -52,7 +53,7 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
             xcode_check_cycle_counter = 0;
             xcode_is_running = check_xcode()?;
             if !xcode_is_running {
-                log("Xcode is not running", None);
+                log::info!("Xcode is not running");
                 sleep(config.update_interval);
                 continue;
             }
@@ -60,13 +61,13 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
         xcode_check_cycle_counter += 1;
 
         if client.connect().is_ok() {
-            log("Connected to Discord", None);
+            log::info!("Connected to Discord");
             let mut started_at = Timestamps::new().start(current_time() * 1000);
             let mut project_before = String::from("");
             let mut last_frontmost_at = current_time();
 
             while xcode_is_running {
-                log("Xcode is running", None);
+                log::debug!("Xcode is running");
                 let project = if config.hide_project {
                     String::from("")
                 } else {
@@ -89,13 +90,13 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
                             .timestamps(started_at.clone())
                             .assets(
                                 Assets::new()
-                                    .large_text(&FileLanguage::Unknown.get_text_asset_key())
-                                    .large_image(&FileLanguage::Unknown.get_image_asset_key()),
+                                    .large_text(FileLanguage::Unknown.get_text_asset_key())
+                                    .large_image(FileLanguage::Unknown.get_image_asset_key()),
                             )
                             .details("Idle")
                             .state("Idle"),
                     )?;
-                    log("Updated activity: idle", None);
+                    log::info!("Updated activity: idle");
                     sleep(config.update_interval);
                     xcode_is_running = check_xcode()?;
                     continue;
@@ -125,13 +126,13 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
                     .state(state);
 
                 client.set_activity(activity)?;
-                log("Updated activity: working on a project", None);
+                log::debug!("Updated activity: working on a project");
 
                 sleep(config.update_interval);
                 xcode_is_running = check_xcode()?
             }
         } else {
-            log("Discord is not running", None);
+            log::debug!("Discord is not running");
         }
         sleep(config.update_interval);
     }
@@ -204,18 +205,9 @@ fn current_time() -> i64 {
         .as_secs() as i64
 }
 
-/// Standardized logging function
-fn log(message: &str, error: Option<&str>) {
-    let date_format = Local::now().format("%Y-%m-%d %H:%M:%S");
-    match error {
-        Some(error) => eprintln!("{}: {} (Error: {})", date_format, message, error),
-        None => println!("{}: {}", date_format, message),
-    }
-}
-
-/// Sleep for `Config::wait_time` seconds
-fn sleep(wait_time: u64) {
-    thread::sleep(Duration::from_secs(wait_time));
+/// Sleep for `Config::update_interval` seconds
+fn sleep(update_interval: u64) {
+    thread::sleep(Duration::from_secs(update_interval));
 }
 
 /// Check if frontmost application is Xcode

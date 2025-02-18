@@ -10,6 +10,8 @@ pub(crate) enum Error {
     Oascript(String),
     #[error("BoxDyn error: {0}")]
     BoxDyn(#[from] Box<dyn std::error::Error>),
+    #[error("SimpleLogger error: {0}")]
+    SimpleLogger(#[from] log::SetLoggerError),
     #[error("Custom error: {0}")]
     Custom(String),
 }
