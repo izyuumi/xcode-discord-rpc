@@ -59,6 +59,11 @@ fn discord_rpc(config: &AppConfig) -> Result<()> {
         }
         xcode_check_cycle_counter += 1;
 
+        if !xcode_is_running {
+            sleep(config.update_interval);
+            continue;
+        }
+
         if client.connect().is_ok() {
             log::info!("Connected to Discord");
             let mut started_at = Timestamps::new().start(current_time() * 1000);
