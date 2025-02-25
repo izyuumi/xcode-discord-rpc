@@ -9,8 +9,10 @@ const HIDE_PROJECT_ARG_ID: &str = "hide_project";
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
-    /// Interval in seconds for checking status
+    /// Interval in seconds for checking status for Discord and Xcode
     pub update_interval: u64,
+    /// Interval in seconds for checking updates in Xcode
+    pub xcode_update_interval: u64,
     /// Number of update cycles before re-checking if Xcode is running
     pub xcode_check_cycle: u8,
     /// Threshold in seconds for considering the user idle status

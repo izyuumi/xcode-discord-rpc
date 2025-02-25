@@ -26,6 +26,7 @@ pub struct XcodeState<'a> {
     xcode_check_cycle_counter: u8,
     config: &'a AppConfig,
     discord_ipc: &'a mut DiscordIpcClient,
+    discord_is_connected: bool,
 }
 
 impl<'a> XcodeState<'a> {
@@ -36,6 +37,7 @@ impl<'a> XcodeState<'a> {
             xcode_check_cycle_counter: config.xcode_check_cycle,
             config,
             discord_ipc,
+            discord_is_connected: false,
         }
     }
 
@@ -50,23 +52,30 @@ impl<'a> XcodeState<'a> {
             // make sure discord is running and we are connected
             if let Err(e) = self.discord_ipc.connect() {
                 log::debug!("Discord is not running: {}", e);
-                self.sleep();
+                self.discord_is_connected = false;
+                self.sleep_discord_xcode();
                 continue;
             }
+            self.discord_is_connected = true;
 
             log::info!("Connected to Discord");
             self.handle_discord_session()?;
 
-            self.sleep();
+            self.sleep_xcode_update();
         }
 
         #[allow(unreachable_code)]
         Ok(())
     }
 
-    /// Suspends execution for the configured update interval
-    fn sleep(&self) {
+    /// Sleep for the configured update interval to check if Xcode/Discord is running
+    fn sleep_discord_xcode(&self) {
         sleep(self.config.update_interval);
+    }
+
+    /// Sleep for the configured Xcode update interval to check for updates
+    fn sleep_xcode_update(&self) {
+        sleep(self.config.xcode_update_interval);
     }
 }
 
@@ -87,14 +96,17 @@ impl XcodeState<'_> {
             self.check_xcode()?;
             if !self.xcode_is_running {
                 log::debug!("Xcode is not running");
-                self.sleep();
+                if self.discord_is_connected {
+                    self.clear_activity()?;
+                }
+                self.sleep_discord_xcode();
                 return Ok(Flow::Continue(()));
             }
         }
         self.xcode_check_cycle_counter += 1;
 
         if !self.xcode_is_running {
-            self.sleep();
+            self.sleep_discord_xcode();
             return Ok(Flow::Continue(()));
         }
 
@@ -129,7 +141,7 @@ impl XcodeState<'_> {
             }
 
             self.set_working_activity(&project, &started_at)?;
-            self.sleep();
+            self.sleep_xcode_update();
             self.check_xcode()?;
         }
         Ok(())
@@ -166,7 +178,7 @@ impl XcodeState<'_> {
                 .state("Idle"),
         )?;
         log::info!("Updated activity: idle");
-        self.sleep();
+        self.sleep_discord_xcode();
         self.check_xcode()?;
         Ok(())
     }
@@ -190,6 +202,12 @@ impl XcodeState<'_> {
 
         self.discord_ipc.set_activity(activity)?;
         log::debug!("Updated activity: working on a project");
+        Ok(())
+    }
+
+    /// Clear the Discord activity
+    fn clear_activity(&mut self) -> Result<()> {
+        self.discord_ipc.clear_activity()?;
         Ok(())
     }
 
