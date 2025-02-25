@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.0.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.5...v1.0.0) (2025-02-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* `show-file` and `show-project` arguments has been renamed to `hide-file` and `hide-project`
+
+### Features
+
+* add configurable Xcode update interval and improve Discord connection handling ([5070fec](https://github.com/izyuumi/xcode-discord-rpc/commit/5070fec77cd1c6389222fa30a61f8e6a898cdc6e))
+* add configuration management ([f142ed4](https://github.com/izyuumi/xcode-discord-rpc/commit/f142ed450f67947bf9bea72d6f73244378bc096d))
+* add custom error variant and improve main function error handling ([040b3e5](https://github.com/izyuumi/xcode-discord-rpc/commit/040b3e52a653ed51fc6094f5266677c4ec6a44a0))
+* enhance logging levels based on debug configuration ([be81828](https://github.com/izyuumi/xcode-discord-rpc/commit/be8182882a4ddad148c808b6935c608a3c38ae9a))
+* improve file language handling ([407acec](https://github.com/izyuumi/xcode-discord-rpc/commit/407acecac76ad4aa0e6cd8d2a2cc0b2783783a43))
+* integrate SimpleLogger for improved logging ([474bf11](https://github.com/izyuumi/xcode-discord-rpc/commit/474bf118008a49433169a6660ee300aeeb3d28a4))
+* introduce custom error handling with Result type and Error enum ([7476f2a](https://github.com/izyuumi/xcode-discord-rpc/commit/7476f2aa3a66debf7ccb0b1c3540b98b794db480))
+* rename wait_time with update_interval ([a09f20b](https://github.com/izyuumi/xcode-discord-rpc/commit/a09f20bd2261f04c38834aa2f493650cab1a3f39))
+
+
+### Bug Fixes
+
+* enhance error handling in run_osascript function ([6b8db8a](https://github.com/izyuumi/xcode-discord-rpc/commit/6b8db8a55c5983ee2f93cf966f084d4e7521f14b))
+* improve error handling for Discord IPC client initialization ([b1b5634](https://github.com/izyuumi/xcode-discord-rpc/commit/b1b5634050dcf4dbb1e8f3a0bd6d379b1e5eaf86))
+* rename wait_time to update_interval in default configuration ([783020a](https://github.com/izyuumi/xcode-discord-rpc/commit/783020a5f7acbd3efb5c69c3c8eda49f9b33d1bf))
+* streamline output handling in AppleScript execution functions ([21c8aee](https://github.com/izyuumi/xcode-discord-rpc/commit/21c8aee91afea0080485313e62b4b51b0b5aa04a))
+
+
+### Performance Improvements
+
+* skip discord connection when xcode is not running ([f44d54a](https://github.com/izyuumi/xcode-discord-rpc/commit/f44d54a20c8f5dceb09e6f6c3c9493824e110962))
+
 ## [0.3.5](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.4...v0.3.5) (2025-02-17)
 
 
