@@ -12,7 +12,7 @@ pub struct AppConfig {
     /// Interval in seconds for checking status
     pub update_interval: u64,
     /// Number of update cycles before re-checking if Xcode is running
-    pub xcode_check_cycle: i8,
+    pub xcode_check_cycle: u8,
     /// Threshold in seconds for considering the user idle status
     pub idle_threshold: i64,
     /// Whether to hide the file name in Discord Rich Presence

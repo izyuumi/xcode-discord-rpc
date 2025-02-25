@@ -8,7 +8,10 @@ use crate::{Error, Result};
 
 pub fn init_discord_ipc() -> Result<DiscordIpcClient> {
     match DiscordIpcClient::new("1158013054898950185") {
-        Ok(client) => Ok(client),
+        Ok(client) => {
+            log::debug!("Discord IPC client initialized");
+            Ok(client)
+        }
         Err(err) => Err(Error::DiscordIpc(err.to_string())),
     }
 }
