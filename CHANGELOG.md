@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.0.0...v1.1.0) (2025-02-28)
+
+
+### Features
+
+* embed default configuration as compile-time constant ([cea3684](https://github.com/izyuumi/xcode-discord-rpc/commit/cea3684a1b600b16a57f70b195574bf20a46c604))
+
 ## [1.0.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v0.3.5...v1.0.0) (2025-02-25)
 
 
