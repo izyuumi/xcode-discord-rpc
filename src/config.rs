@@ -1,11 +1,13 @@
 use clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
-use config::{Config, File};
+use config::{Config, File, FileFormat};
 use serde::Deserialize;
 
 /// Argument ID for hiding the file name in Discord Rich Presence
 const HIDE_FILE_ARG_ID: &str = "hide_file";
 /// Argument ID for hiding the project name in Discord Rich Presence
 const HIDE_PROJECT_ARG_ID: &str = "hide_project";
+/// Content of the default configuration file
+const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default.toml"));
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
@@ -28,7 +30,7 @@ impl AppConfig {
         let clap_matches = Self::get_clap_matches();
 
         let c = Config::builder()
-            .add_source(File::with_name("default"))
+            .add_source(File::from_str(DEFAULT_CONFIG, FileFormat::Toml))
             .set_override("hide_file", clap_matches.get_flag(HIDE_FILE_ARG_ID))?
             .set_override("hide_project", clap_matches.get_flag(HIDE_PROJECT_ARG_ID))?
             .build()?;
