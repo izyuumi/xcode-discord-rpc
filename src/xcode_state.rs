@@ -27,6 +27,9 @@ pub struct XcodeState<'a> {
     config: &'a AppConfig,
     discord_ipc: &'a mut DiscordIpcClient,
     discord_is_connected: bool,
+    /// Multiplier used to progressively increase sleep duration when Xcode or
+    /// Discord is not running. This helps reduce CPU usage when idle.
+    sleep_multiplier: u64,
 }
 
 impl<'a> XcodeState<'a> {
@@ -38,6 +41,7 @@ impl<'a> XcodeState<'a> {
             config,
             discord_ipc,
             discord_is_connected: false,
+            sleep_multiplier: 1,
         }
     }
 
@@ -53,10 +57,12 @@ impl<'a> XcodeState<'a> {
             if let Err(e) = self.discord_ipc.connect() {
                 log::debug!("Discord is not running: {}", e);
                 self.discord_is_connected = false;
+                self.increase_sleep_multiplier();
                 self.sleep_discord_xcode();
                 continue;
             }
             self.discord_is_connected = true;
+            self.reset_sleep_multiplier();
 
             log::info!("Connected to Discord");
             self.handle_discord_session()?;
@@ -70,12 +76,25 @@ impl<'a> XcodeState<'a> {
 
     /// Sleep for the configured update interval to check if Xcode/Discord is running
     fn sleep_discord_xcode(&self) {
-        sleep(self.config.update_interval);
+        sleep(self.config.update_interval * self.sleep_multiplier);
     }
 
     /// Sleep for the configured Xcode update interval to check for updates
     fn sleep_xcode_update(&self) {
         sleep(self.config.xcode_update_interval);
+    }
+
+    /// Increase the sleep multiplier using exponential backoff with a maximum
+    /// cap to avoid excessively frequent checks when Xcode or Discord are not
+    /// running.
+    fn increase_sleep_multiplier(&mut self) {
+        const MAX_MULTIPLIER: u64 = 8;
+        self.sleep_multiplier = (self.sleep_multiplier * 2).min(MAX_MULTIPLIER);
+    }
+
+    /// Reset the sleep multiplier when Xcode and Discord are running again.
+    fn reset_sleep_multiplier(&mut self) {
+        self.sleep_multiplier = 1;
     }
 }
 
@@ -99,16 +118,21 @@ impl XcodeState<'_> {
                 if self.discord_is_connected {
                     self.clear_activity()?;
                 }
+                self.increase_sleep_multiplier();
                 self.sleep_discord_xcode();
                 return Ok(Flow::Continue(()));
             }
+            self.reset_sleep_multiplier();
         }
         self.xcode_check_cycle_counter += 1;
 
         if !self.xcode_is_running {
+            self.increase_sleep_multiplier();
             self.sleep_discord_xcode();
             return Ok(Flow::Continue(()));
         }
+
+        self.reset_sleep_multiplier();
 
         Ok(Flow::GoNext)
     }
@@ -121,6 +145,8 @@ impl XcodeState<'_> {
         let mut started_at = Timestamps::new().start(current_time() * 1000);
         let mut project_before = String::from("");
         let mut last_frontmost_at = current_time();
+
+        self.reset_sleep_multiplier();
 
         while self.xcode_is_running {
             log::debug!("Xcode is running");
@@ -178,6 +204,7 @@ impl XcodeState<'_> {
                 .state("Idle"),
         )?;
         log::info!("Updated activity: idle");
+        self.increase_sleep_multiplier();
         self.sleep_discord_xcode();
         self.check_xcode()?;
         Ok(())
@@ -202,6 +229,7 @@ impl XcodeState<'_> {
 
         self.discord_ipc.set_activity(activity)?;
         log::debug!("Updated activity: working on a project");
+        self.reset_sleep_multiplier();
         Ok(())
     }
 
