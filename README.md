@@ -20,7 +20,7 @@ A simple Discord Rich Presence client for Xcode
 ### Installation with Homebrew
 
 ```bash
-brew tap izyumidev/xcode-discord-rpc
+brew tap izyuumi/xcode-discord-rpc
 brew install xcode-discord-rpc
 brew services restart xcode-discord-rpc
 ```
@@ -32,7 +32,7 @@ If things are not working, restart Discord and/or your computer.
 ```bash
 brew services stop xcode-discord-rpc
 brew uninstall xcode-discord-rpc
-brew untap izyumidev/xcode-discord-rpc
+brew untap izyuumi/xcode-discord-rpc
 ```
 
 ## Supported File Types
@@ -45,7 +45,7 @@ brew untap izyumidev/xcode-discord-rpc
 - `.rb`
 - `.metal`
 
-Please [create an issue](https://github.com/izyumidev/xcode-discord-rpc/issues/new/choose) if you desire for more file types to be supported.
+Please [create an issue](https://github.com/izyuumi/xcode-discord-rpc/issues/new/choose) if you desire for more file types to be supported.
 
 Images are created on this figma file:
 https://www.figma.com/file/yNH9oBUxf6t4x3AXv6Xrd0/xcode-discord-rpc
