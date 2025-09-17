@@ -257,7 +257,7 @@ impl XcodeState<'_> {
                 String::from(file_language.get_text_asset_key()),
                 String::from(file_language.get_image_asset_key()),
             );
-            format!("Working on {}", file)
+            format!("Working on {file}")
         };
 
         Ok((details, keys))
@@ -268,7 +268,7 @@ impl XcodeState<'_> {
         if self.config.hide_project {
             String::from("in a Project")
         } else {
-            format!("in {}", project)
+            format!("in {project}")
         }
     }
 }

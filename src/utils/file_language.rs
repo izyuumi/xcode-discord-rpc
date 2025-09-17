@@ -77,6 +77,6 @@ pub trait FileExtention {
 impl FileExtention for str {
     /// Returns the file extension of the string
     fn get_file_extension(&self) -> String {
-        self.split('.').last().unwrap_or("").trim().to_string()
+        self.split('.').next_back().unwrap_or("").trim().to_string()
     }
 }
