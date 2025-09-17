@@ -24,6 +24,7 @@ clap = { version = "4.0", features = ["derive", "cargo"] }
 thiserror = "2.0.11"
 config = "0.15.8"
 serde = { version = "1.0.217", features = ["derive"] }
+directories = "6.0.0"
 simple_logger = { version = "5.0.0", default-features = false, features = [
     "timestamps",
 ] }

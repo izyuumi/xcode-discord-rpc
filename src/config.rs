@@ -1,5 +1,6 @@
 use clap::{Arg, ArgAction, ArgMatches, Command as ClapCommand};
-use config::{Config, File, FileFormat};
+use config::{Config, Environment, File, FileFormat};
+use directories::ProjectDirs;
 use serde::Deserialize;
 
 /// Argument ID for hiding the file name in Discord Rich Presence
@@ -29,8 +30,16 @@ impl AppConfig {
     pub fn new() -> crate::Result<Self> {
         let clap_matches = Self::get_clap_matches();
 
-        let c = Config::builder()
-            .add_source(File::from_str(DEFAULT_CONFIG, FileFormat::Toml))
+        let mut builder =
+            Config::builder().add_source(File::from_str(DEFAULT_CONFIG, FileFormat::Toml));
+
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "xcode-discord-rpc") {
+            let config_path = proj_dirs.config_dir().join("config.toml");
+            builder = builder.add_source(File::from(config_path).required(false));
+        }
+
+        let c = builder
+            .add_source(Environment::with_prefix("XDRPC").separator("__"))
             .set_override("hide_file", clap_matches.get_flag(HIDE_FILE_ARG_ID))?
             .set_override("hide_project", clap_matches.get_flag(HIDE_PROJECT_ARG_ID))?
             .build()?;
