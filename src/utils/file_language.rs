@@ -15,6 +15,8 @@ pub enum FileLanguage {
     Json,
     /// Metal
     Metal,
+    /// Objective-C
+    ObjectiveC,
     /// Unknown or unsupported
     Unknown,
 }
@@ -30,6 +32,7 @@ impl FileLanguage {
             FileLanguage::Java => ("Java", "java"),
             FileLanguage::Json => ("Json", "jSON"),
             FileLanguage::Metal => ("Metal", "metal"),
+            FileLanguage::ObjectiveC => ("Objective-C", "objc"),
             FileLanguage::Unknown => ("Xcode", "xcode"),
         }
     }
@@ -59,6 +62,7 @@ impl ToFileLanguage for str {
             "swift" => FileLanguage::Swift,
             "cpp" | "cp" | "cxx" => FileLanguage::Cpp,
             "c" => FileLanguage::C,
+            "m" | "mm" | "h" => FileLanguage::ObjectiveC,
             "ruby" => FileLanguage::Ruby,
             "java" => FileLanguage::Java,
             "json" => FileLanguage::Json,
