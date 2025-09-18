@@ -20,9 +20,7 @@ A simple Discord Rich Presence client for Xcode
 ### Installation with Homebrew
 
 ```bash
-brew tap izyuumi/xcode-discord-rpc
-brew install xcode-discord-rpc
-brew services restart xcode-discord-rpc
+brew install izyuumi/xcode-discord-rpc && brew services restart xcode-discord-rpc
 ```
 
 If things are not working, restart Discord and/or your computer.
@@ -30,16 +28,19 @@ If things are not working, restart Discord and/or your computer.
 ### Uninstallation
 
 ```bash
-brew services stop xcode-discord-rpc
-brew uninstall xcode-discord-rpc
-brew untap izyuumi/xcode-discord-rpc
+brew services stop xcode-discord-rpc && brew uninstall xcode-discord-rpc && brew untap izyuumi/xcode-discord-rpc
 ```
+
+## Configuration
+
+You can override the default configuration by creating a file at `~/.config/xcode-discord-rpc/config.toml` or by setting environment variables. For more details, see the [configuration documentation](docs/config.md).
 
 ## Supported File Types
 
 - `.swift`
 - `.cpp`, `.cp`, `cxx`
 - `.c`
+- `.h`, `.m`, `.mm`
 - `.java`
 - `.json`
 - `.rb`
