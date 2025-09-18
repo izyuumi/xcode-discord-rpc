@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.1.0...v1.2.0) (2025-09-18)
+
+
+### Features
+
+* **config:** add support for global config file and env vars ([579c43a](https://github.com/izyuumi/xcode-discord-rpc/commit/579c43a20e99ddf4b736efdc48a62f2d237f0051)), closes [#28](https://github.com/izyuumi/xcode-discord-rpc/issues/28)
+* **lang:** add support for Objective-C files ([4767ce4](https://github.com/izyuumi/xcode-discord-rpc/commit/4767ce47a0b5c3297b1e29429360ed44413cf159)), closes [#27](https://github.com/izyuumi/xcode-discord-rpc/issues/27)
+
 ## [1.1.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.0.0...v1.1.0) (2025-02-28)
 
 
