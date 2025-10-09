@@ -13,6 +13,7 @@ update_interval = 60
 xcode_update_interval = 5
 xcode_check_cycle = 10
 idle_threshold = 300
+disable_idle = false
 hide_file = true
 hide_project = false
 ```
@@ -45,6 +46,11 @@ Command-line arguments are also available for `hide-file` and `hide-project`.
 
 - **Description**: The threshold in seconds to consider the user as idle. If there is no activity for this duration, the status will show as idle.
 - **Default**: `25`
+
+### `disable_idle`
+
+- **Description**: A boolean value to determine whether to disable idle status detection. When set to `true`, the Discord Rich Presence will never show an idle status, even when Xcode is not in the foreground.
+- **Default**: `false`
 
 ### `hide_file`
 

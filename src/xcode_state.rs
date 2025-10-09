@@ -159,7 +159,8 @@ impl XcodeState<'_> {
                 project_before = project.clone();
             }
 
-            let is_idle = current_time() - last_frontmost_at > self.config.idle_threshold;
+            let is_idle = !self.config.disable_idle
+                && current_time() - last_frontmost_at > self.config.idle_threshold;
 
             if project.is_empty() || is_idle {
                 self.set_idle_activity(&started_at)?;
