@@ -20,6 +20,8 @@ pub struct AppConfig {
     pub xcode_check_cycle: u8,
     /// Threshold in seconds for considering the user idle status
     pub idle_threshold: i64,
+    /// Whether to disable idle status detection
+    pub disable_idle: bool,
     /// Whether to hide the file name in Discord Rich Presence
     pub hide_file: bool,
     /// Whether to hide the project name in Discord Rich Presence
