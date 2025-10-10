@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.2.0...v1.3.0) (2025-10-10)
+
+
+### Features
+
+* **config:** add disable_idle option to prevent idle status ([f27c510](https://github.com/izyuumi/xcode-discord-rpc/commit/f27c5107853ca2b9137c453e4e49400e8f14ba4c))
+
 ## [1.2.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.1.0...v1.2.0) (2025-09-18)
 
 
