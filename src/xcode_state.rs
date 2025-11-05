@@ -171,6 +171,9 @@ impl XcodeState<'_> {
             self.sleep_xcode_update();
             self.check_xcode()?;
         }
+
+        log::info!("Xcode stopped, clearing Discord activity");
+        self.clear_activity()?;
         Ok(())
     }
 
@@ -205,9 +208,6 @@ impl XcodeState<'_> {
                 .state("Idle"),
         )?;
         log::info!("Updated activity: idle");
-        self.increase_sleep_multiplier();
-        self.sleep_discord_xcode();
-        self.check_xcode()?;
         Ok(())
     }
 
