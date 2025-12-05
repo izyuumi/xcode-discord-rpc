@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.3.0...v1.3.1) (2025-12-05)
+
+
+### Bug Fixes
+
+* restore idle checks ([6127125](https://github.com/izyuumi/xcode-discord-rpc/commit/61271250bc24fcd9fe8915e801a497047bc596cf))
+
 ## [1.3.0](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.2.0...v1.3.0) (2025-10-10)
 
 
