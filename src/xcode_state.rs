@@ -164,6 +164,9 @@ impl XcodeState<'_> {
 
             if project.is_empty() || is_idle {
                 self.set_idle_activity(&started_at)?;
+                self.increase_sleep_multiplier();
+                self.sleep_discord_xcode();
+                self.check_xcode()?;
                 continue;
             }
 
