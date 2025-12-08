@@ -190,11 +190,7 @@ impl XcodeState<'_> {
 
     /// Retrieves current project name, respecting hide_project configuration
     fn get_current_project(&self) -> Result<String> {
-        if self.config.hide_project {
-            Ok(String::from(""))
-        } else {
-            current_project()
-        }
+        current_project()
     }
 
     /// Sets Discord activity to idle state
