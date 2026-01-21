@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.3.1...v1.3.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* use documented config path ~/.config/xcode-discord-rpc/config.toml ([20cb257](https://github.com/izyuumi/xcode-discord-rpc/commit/20cb257d22679ed29598193057aa9961b35ef100)), closes [#35](https://github.com/izyuumi/xcode-discord-rpc/issues/35)
+
 ## [1.3.1](https://github.com/izyuumi/xcode-discord-rpc/compare/v1.3.0...v1.3.1) (2025-12-05)
 
 
