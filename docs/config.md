@@ -20,10 +20,13 @@ hide_project = false
 
 ## Command-Line Arguments
 
-Command-line arguments are also available for `hide-file` and `hide-project`.
+Command-line arguments are available for common options:
 
 - `-f`, `--hide-file`: Hide the current file in Discord Rich Presence.
 - `-p`, `--hide-project`: Hide the current project in Discord Rich Presence.
+- `-i`, `--disable-idle`: Disable idle status detection.
+- `-V`, `--version`: Print version information.
+- `-h`, `--help`: Print help information.
 
 ## Configuration Options
 
@@ -51,6 +54,7 @@ Command-line arguments are also available for `hide-file` and `hide-project`.
 
 - **Description**: A boolean value to determine whether to disable idle status detection. When set to `true`, the Discord Rich Presence will never show an idle status, even when Xcode is not in the foreground.
 - **Default**: `false`
+- **Command-Line Flag**: `--disable-idle` or `-i`
 
 ### `hide_file`
 
