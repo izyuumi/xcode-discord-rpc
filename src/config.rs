@@ -7,6 +7,8 @@ use std::path::PathBuf;
 const HIDE_FILE_ARG_ID: &str = "hide_file";
 /// Argument ID for hiding the project name in Discord Rich Presence
 const HIDE_PROJECT_ARG_ID: &str = "hide_project";
+/// Argument ID for disabling idle detection
+const DISABLE_IDLE_ARG_ID: &str = "disable_idle";
 /// Content of the default configuration file
 const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default.toml"));
 
@@ -52,6 +54,9 @@ impl AppConfig {
         if clap_matches.get_flag(HIDE_PROJECT_ARG_ID) {
             builder = builder.set_override("hide_project", true)?;
         }
+        if clap_matches.get_flag(DISABLE_IDLE_ARG_ID) {
+            builder = builder.set_override("disable_idle", true)?;
+        }
         let c = builder.build()?;
         
         Ok(c.try_deserialize()?)
@@ -77,6 +82,14 @@ impl AppConfig {
                     .num_args(0)
                     .action(ArgAction::SetTrue)
                     .help("Hide current project in Discord Rich Presence"),
+            )
+            .arg(
+                Arg::new(DISABLE_IDLE_ARG_ID)
+                    .short('i')
+                    .long("disable-idle")
+                    .num_args(0)
+                    .action(ArgAction::SetTrue)
+                    .help("Disable idle status detection"),
             )
             .get_matches()
     }
