@@ -7,6 +7,8 @@ use std::path::PathBuf;
 const HIDE_FILE_ARG_ID: &str = "hide_file";
 /// Argument ID for hiding the project name in Discord Rich Presence
 const HIDE_PROJECT_ARG_ID: &str = "hide_project";
+/// Argument ID for the custom config file path
+const CONFIG_ARG_ID: &str = "config";
 /// Content of the default configuration file
 const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default.toml"));
 
@@ -35,7 +37,12 @@ impl AppConfig {
         let mut builder =
             Config::builder().add_source(File::from_str(DEFAULT_CONFIG, FileFormat::Toml));
 
-        if let Some(home) = std::env::var_os("HOME") {
+        // Config file: use --config path if provided, otherwise default location
+        if let Some(config_path) = clap_matches.get_one::<String>(CONFIG_ARG_ID) {
+            let path = PathBuf::from(config_path);
+            log::debug!("Using custom config file: {:?}", path);
+            builder = builder.add_source(File::from(path).required(true));
+        } else if let Some(home) = std::env::var_os("HOME") {
             let config_path = PathBuf::from(home)
                 .join(".config")
                 .join("xcode-discord-rpc")
@@ -62,6 +69,14 @@ impl AppConfig {
             .version(clap::crate_version!())
             .author(clap::crate_authors!())
             .about("Displays Xcode status on Discord Rich Presence")
+            .arg(
+                Arg::new(CONFIG_ARG_ID)
+                    .short('c')
+                    .long("config")
+                    .num_args(1)
+                    .value_name("PATH")
+                    .help("Path to a custom config file (required if specified)"),
+            )
             .arg(
                 Arg::new(HIDE_FILE_ARG_ID)
                     .short('f')
