@@ -1,3 +1,6 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
     DiscordIpc, DiscordIpcClient,
@@ -46,8 +49,8 @@ impl<'a> XcodeState<'a> {
     }
 
     /// Runs the main loop that monitors Xcode and updates Discord Rich Presence
-    pub fn run(&mut self) -> Result<()> {
-        loop {
+    pub fn run(&mut self, running: &Arc<AtomicBool>) -> Result<()> {
+        while running.load(Ordering::SeqCst) {
             // check xcode
             if let Flow::Continue(()) = self.check_xcode_cycle()? {
                 continue;
@@ -70,7 +73,6 @@ impl<'a> XcodeState<'a> {
             self.sleep_xcode_update();
         }
 
-        #[allow(unreachable_code)]
         Ok(())
     }
 
@@ -239,7 +241,7 @@ impl XcodeState<'_> {
     }
 
     /// Clear the Discord activity
-    fn clear_activity(&mut self) -> Result<()> {
+    pub fn clear_activity(&mut self) -> Result<()> {
         self.discord_ipc.clear_activity()?;
         Ok(())
     }
