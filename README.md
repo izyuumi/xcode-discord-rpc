@@ -1,5 +1,9 @@
 # Discord Rich Presence for Xcode
 
+[![Crates.io](https://img.shields.io/crates/v/xcode-discord-rpc)](https://crates.io/crates/xcode-discord-rpc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/izyuumi/xcode-discord-rpc)](https://github.com/izyuumi/xcode-discord-rpc/releases)
+
 A simple Discord Rich Presence client for Xcode
 
 <p align="center">
