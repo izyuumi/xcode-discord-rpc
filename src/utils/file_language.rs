@@ -17,6 +17,16 @@ pub enum FileLanguage {
     Metal,
     /// Objective-C
     ObjectiveC,
+    /// Interface Builder (Storyboard / XIB)
+    InterfaceBuilder,
+    /// Property List
+    Plist,
+    /// Markdown
+    Markdown,
+    /// YAML
+    Yaml,
+    /// Shell script
+    Shell,
     /// Unknown or unsupported
     Unknown,
 }
@@ -33,6 +43,11 @@ impl FileLanguage {
             FileLanguage::Json => ("Json", "jSON"),
             FileLanguage::Metal => ("Metal", "metal"),
             FileLanguage::ObjectiveC => ("Objective-C", "objc"),
+            FileLanguage::InterfaceBuilder => ("Interface Builder", "xcode"),
+            FileLanguage::Plist => ("Property List", "xcode"),
+            FileLanguage::Markdown => ("Markdown", "xcode"),
+            FileLanguage::Yaml => ("YAML", "xcode"),
+            FileLanguage::Shell => ("Shell", "xcode"),
             FileLanguage::Unknown => ("Xcode", "xcode"),
         }
     }
@@ -67,6 +82,11 @@ impl ToFileLanguage for str {
             "java" => FileLanguage::Java,
             "json" => FileLanguage::Json,
             "metal" => FileLanguage::Metal,
+            "storyboard" | "xib" => FileLanguage::InterfaceBuilder,
+            "plist" | "entitlements" | "pbxproj" => FileLanguage::Plist,
+            "md" | "markdown" => FileLanguage::Markdown,
+            "yml" | "yaml" => FileLanguage::Yaml,
+            "sh" | "bash" | "zsh" => FileLanguage::Shell,
             _ => FileLanguage::Unknown,
         }
     }
