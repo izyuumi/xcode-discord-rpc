@@ -190,10 +190,11 @@ impl XcodeState<'_> {
 
     /// Retrieves current project name, respecting hide_project configuration
     fn get_current_project(&self) -> Result<String> {
-        if self.config.hide_project {
-            Ok(String::from(""))
+        let project = current_project()?;
+        if self.config.hide_project && !project.is_empty() {
+            Ok(String::from("Project"))
         } else {
-            current_project()
+            Ok(project)
         }
     }
 
