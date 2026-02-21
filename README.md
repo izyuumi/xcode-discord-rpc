@@ -58,13 +58,13 @@ To run xcode-discord-rpc automatically when you log in:
 
 ```bash
 cp com.izyuumi.xcode-discord-rpc.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
 ```
 
 To stop and remove:
 
 ```bash
-launchctl unload ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
 rm ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
 ```
 
