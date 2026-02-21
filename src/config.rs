@@ -44,12 +44,16 @@ impl AppConfig {
             builder = builder.add_source(File::from(config_path).required(false));
         }
 
-        let c = builder
-            .add_source(Environment::with_prefix("XDRPC").separator("__"))
-            .set_override("hide_file", clap_matches.get_flag(HIDE_FILE_ARG_ID))?
-            .set_override("hide_project", clap_matches.get_flag(HIDE_PROJECT_ARG_ID))?
-            .build()?;
-
+        let mut builder = builder
+            .add_source(Environment::with_prefix("XDRPC").separator("__"));
+        if clap_matches.get_flag(HIDE_FILE_ARG_ID) {
+            builder = builder.set_override("hide_file", true)?;
+        }
+        if clap_matches.get_flag(HIDE_PROJECT_ARG_ID) {
+            builder = builder.set_override("hide_project", true)?;
+        }
+        let c = builder.build()?;
+        
         Ok(c.try_deserialize()?)
     }
 
@@ -64,8 +68,7 @@ impl AppConfig {
                     .long("hide-file")
                     .num_args(0)
                     .action(ArgAction::SetTrue)
-                    .help("Hide current file in Discord Rich Presence")
-                    .default_value("false"),
+                    .help("Hide current file in Discord Rich Presence"),
             )
             .arg(
                 Arg::new(HIDE_PROJECT_ARG_ID)
@@ -73,8 +76,7 @@ impl AppConfig {
                     .long("hide-project")
                     .num_args(0)
                     .action(ArgAction::SetTrue)
-                    .help("Hide current project in Discord Rich Presence")
-                    .default_value("false"),
+                    .help("Hide current project in Discord Rich Presence"),
             )
             .get_matches()
     }
