@@ -2,13 +2,24 @@ use std::process::Command;
 
 use crate::{Error, Result};
 
-/// Execute an AppleScript command using osascript and returns the output as a String
+/// Execute an AppleScript command using osascript and returns the output as a String.
+/// Returns an error if osascript exits non-zero, including stderr for diagnostics.
 pub fn run_osascript(script: &str) -> Result<String> {
     let output = Command::new("osascript")
         .arg("-e")
         .arg(script)
         .output()
-        .map_err(|err| Error::Oascript(err.to_string()))?;
+        .map_err(|err| Error::Oascript(format!("Failed to run osascript: {err}")))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let code = output.status.code().unwrap_or(-1);
+        log::debug!("osascript failed (exit {}): {}", code, stderr);
+        return Err(Error::Oascript(format!(
+            "osascript exited with code {code}: {stderr}"
+        )));
+    }
+
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
