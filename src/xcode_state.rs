@@ -144,6 +144,8 @@ impl XcodeState<'_> {
     fn handle_discord_session(&mut self) -> Result<()> {
         let mut started_at = Timestamps::new().start(current_time() * 1000);
         let mut project_before = String::from("");
+        let mut file_before = String::from("");
+        let mut file_started_at = Timestamps::new().start(current_time() * 1000);
         let mut last_frontmost_at = current_time();
 
         self.reset_sleep_multiplier();
@@ -170,7 +172,18 @@ impl XcodeState<'_> {
                 continue;
             }
 
-            self.set_working_activity(&project, &started_at)?;
+            // Track file changes for per-file timestamp
+            let current_file_name = if self.config.hide_file {
+                String::new()
+            } else {
+                current_file().unwrap_or_default()
+            };
+            if current_file_name != file_before {
+                file_started_at = Timestamps::new().start(current_time() * 1000);
+                file_before = current_file_name;
+            }
+
+            self.set_working_activity(&project, &started_at, &file_started_at)?;
             self.sleep_xcode_update();
             self.check_xcode()?;
         }
@@ -216,14 +229,14 @@ impl XcodeState<'_> {
     }
 
     /// Sets Discord activity to working state with project and file information
-    fn set_working_activity(&mut self, project: &str, started_at: &Timestamps) -> Result<()> {
+    fn set_working_activity(&mut self, project: &str, _started_at: &Timestamps, file_started_at: &Timestamps) -> Result<()> {
         // Get all data first
         let (details, (large_text, large_image)) = self.get_file_details()?;
         let state = self.get_project_state(project);
 
-        // Now use the data to set activity
+        // Use per-file timestamp so Discord shows "editing for X minutes" per file
         let activity = Activity::new()
-            .timestamps(started_at.clone())
+            .timestamps(file_started_at.clone())
             .assets(
                 Assets::new()
                     .large_text(&large_text)
