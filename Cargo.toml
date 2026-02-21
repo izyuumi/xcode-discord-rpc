@@ -28,3 +28,4 @@ simple_logger = { version = "5.0.0", default-features = false, features = [
     "timestamps",
 ] }
 log = "0.4.25"
+ctrlc = "3.4"

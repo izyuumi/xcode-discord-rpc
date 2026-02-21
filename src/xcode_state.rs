@@ -3,6 +3,9 @@ use discord_rich_presence::{
     DiscordIpc, DiscordIpcClient,
 };
 
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
 use crate::{
     config::AppConfig,
     utils::{
@@ -45,9 +48,10 @@ impl<'a> XcodeState<'a> {
         }
     }
 
-    /// Runs the main loop that monitors Xcode and updates Discord Rich Presence
-    pub fn run(&mut self) -> Result<()> {
-        loop {
+    /// Runs the main loop that monitors Xcode and updates Discord Rich Presence.
+    /// Exits cleanly when `running` is set to `false` (e.g. via SIGINT/SIGTERM).
+    pub fn run(&mut self, running: &Arc<AtomicBool>) -> Result<()> {
+        while running.load(Ordering::SeqCst) {
             // check xcode
             if let Flow::Continue(()) = self.check_xcode_cycle()? {
                 continue;
@@ -70,7 +74,6 @@ impl<'a> XcodeState<'a> {
             self.sleep_xcode_update();
         }
 
-        #[allow(unreachable_code)]
         Ok(())
     }
 
