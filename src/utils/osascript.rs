@@ -26,35 +26,60 @@ pub fn check_xcode() -> Result<bool> {
 
 /// Get the current file's name as a String
 pub fn current_file() -> Result<String> {
-    let file = run_osascript(
+    let raw = run_osascript(
         r#"
         tell application "Xcode"
             return name of windows whose index is 1
         end tell
     "#,
     )?;
-    if !file.contains(" — ") {
-        return Ok(file);
+    log::debug!("Raw Xcode window title: {:?}", raw);
+    if !raw.contains(" — ") {
+        return Ok(raw);
     }
-    let file = file.split(" — ").collect::<Vec<&str>>()[1];
+    let file = raw.split(" — ").collect::<Vec<&str>>()[1];
+    log::debug!("Detected file: {:?}", file);
     Ok(file.to_string())
+}
+
+/// Get the current file's name using the source editor (more reliable than window title)
+pub fn current_file_from_source_editor() -> Result<String> {
+    let file = run_osascript(
+        r#"
+        tell application "Xcode"
+            set docPath to path of document of window 1
+            return docPath
+        end tell
+    "#,
+    )?;
+    if file == "missing value" || file.is_empty() {
+        return current_file();
+    }
+    // Extract filename from path
+    let filename = file.rsplit('/').next().unwrap_or(&file);
+    log::debug!("Source editor file: {:?}", filename);
+    Ok(filename.to_string())
 }
 
 /// Get the current project's name as a String
 pub fn current_project() -> Result<String> {
-    let project = run_osascript(
+    let raw = run_osascript(
         r#"
         tell application "Xcode"
             return active workspace document
         end tell
     "#,
     )?;
-    if project == "missing value" {
+    log::debug!("Raw Xcode workspace: {:?}", raw);
+    if raw == "missing value" {
         return Ok(String::new());
     }
-    if project.starts_with("workspace document ") {
-        return Ok(project.replace("workspace document ", ""));
-    }
+    let project = if raw.starts_with("workspace document ") {
+        raw.replace("workspace document ", "")
+    } else {
+        raw
+    };
+    log::debug!("Detected project: {:?}", project);
     Ok(project)
 }
 
