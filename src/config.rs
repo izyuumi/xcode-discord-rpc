@@ -31,6 +31,7 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
+    /// Creates a new `AppConfig` by merging defaults, config file, environment variables, and CLI flags.
     pub fn new() -> crate::Result<Self> {
         let clap_matches = Self::get_clap_matches();
 
@@ -62,6 +63,7 @@ impl AppConfig {
         Ok(c.try_deserialize()?)
     }
 
+    /// Parses command-line arguments and returns the matches.
     fn get_clap_matches() -> ArgMatches {
         ClapCommand::new("Xcode Discord RPC")
             .version(clap::crate_version!())
