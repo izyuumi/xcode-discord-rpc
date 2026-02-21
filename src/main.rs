@@ -1,4 +1,7 @@
+use discord_rich_presence::DiscordIpc;
 use simple_logger::SimpleLogger;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 mod config;
 mod error;
@@ -24,28 +27,49 @@ fn main() -> Result<()> {
 
     let config = AppConfig::new()?;
 
+    // Set up graceful shutdown on SIGINT / SIGTERM
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+    ctrlc::set_handler(move || {
+        log::info!("Received shutdown signal, cleaning up...");
+        r.store(false, Ordering::SeqCst);
+    })
+    .expect("Failed to set signal handler");
+
     log::info!("Starting xcode-discord-rpc");
 
-    loop {
-        if let Err(err) = discord_rpc(&config) {
-            log::error!("{}", err);
-            log::debug!("Trying to reconnect...");
-            sleep(config.update_interval)
+    while running.load(Ordering::SeqCst) {
+        match discord_rpc(&config, &running) {
+            Ok(()) => {} // clean shutdown
+            Err(err) => {
+                log::error!("{}", err);
+                log::debug!("Trying to reconnect...");
+                sleep(config.update_interval);
+            }
         }
-        sleep(config.update_interval)
+        if running.load(Ordering::SeqCst) {
+            sleep(config.update_interval);
+        }
     }
 
-    #[allow(unreachable_code)]
+    log::info!("Exited cleanly");
     Ok(())
 }
 
-fn discord_rpc(config: &AppConfig) -> Result<()> {
+fn discord_rpc(config: &AppConfig, running: &Arc<AtomicBool>) -> Result<()> {
     let mut client = init_discord_ipc()?;
 
     let mut xcode_state = XcodeState::new(config, &mut client);
 
-    xcode_state.run()?;
+    xcode_state.run(running)?;
 
-    #[allow(unreachable_code)]
+    // Clear presence before disconnecting
+    if let Err(e) = client.clear_activity() {
+        log::debug!("Failed to clear Discord activity: {}", e);
+    }
+    if let Err(e) = client.close() {
+        log::debug!("Failed to close Discord IPC: {}", e);
+    }
+
     Ok(())
 }
