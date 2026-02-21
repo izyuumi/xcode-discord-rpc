@@ -8,7 +8,17 @@ pub fn run_osascript(script: &str) -> Result<String> {
         .arg("-e")
         .arg(script)
         .output()
-        .map_err(|err| Error::Oascript(err.to_string()))?;
+        .map_err(|err| Error::Oascript(format!("failed to spawn osascript: {err}")))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let code = output.status.code().unwrap_or(-1);
+        log::debug!("osascript failed (exit {}): {}", code, stderr);
+        return Err(Error::Oascript(format!(
+            "osascript exited with code {code}: {stderr}"
+        )));
+    }
+
     Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
@@ -26,35 +36,65 @@ pub fn check_xcode() -> Result<bool> {
 
 /// Get the current file's name as a String
 pub fn current_file() -> Result<String> {
-    let file = run_osascript(
+    let raw = run_osascript(
         r#"
         tell application "Xcode"
             return name of windows whose index is 1
         end tell
     "#,
     )?;
-    if !file.contains(" — ") {
-        return Ok(file);
-    }
-    let file = file.split(" — ").collect::<Vec<&str>>()[1];
-    Ok(file.to_string())
+    log::debug!("current_file raw: {:?}", raw);
+
+    let file = if raw.contains(" — ") {
+        raw.split(" — ").collect::<Vec<&str>>()[1].to_string()
+    } else {
+        raw
+    };
+    log::debug!("current_file parsed: {:?}", file);
+    Ok(file)
+}
+
+/// Get the current file from the source editor document path (more reliable than window title parsing)
+pub fn current_file_from_source_editor() -> Result<String> {
+    let raw = run_osascript(
+        r#"
+        tell application "Xcode"
+            set doc to front document
+            return path of doc
+        end tell
+    "#,
+    )?;
+    log::debug!("current_file_from_source_editor raw: {:?}", raw);
+
+    // Extract just the filename from the full path
+    let file = raw
+        .rsplit('/')
+        .next()
+        .unwrap_or(&raw)
+        .to_string();
+    log::debug!("current_file_from_source_editor parsed: {:?}", file);
+    Ok(file)
 }
 
 /// Get the current project's name as a String
 pub fn current_project() -> Result<String> {
-    let project = run_osascript(
+    let raw = run_osascript(
         r#"
         tell application "Xcode"
             return active workspace document
         end tell
     "#,
     )?;
-    if project == "missing value" {
-        return Ok(String::new());
-    }
-    if project.starts_with("workspace document ") {
-        return Ok(project.replace("workspace document ", ""));
-    }
+    log::debug!("current_project raw: {:?}", raw);
+
+    let project = if raw == "missing value" {
+        String::new()
+    } else if raw.starts_with("workspace document ") {
+        raw.replace("workspace document ", "")
+    } else {
+        raw
+    };
+    log::debug!("current_project parsed: {:?}", project);
     Ok(project)
 }
 
