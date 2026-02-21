@@ -53,6 +53,7 @@ pub fn current_file_from_source_editor() -> Result<String> {
     "#,
     )?;
     if file == "missing value" || file.is_empty() {
+        log::debug!("Source editor path unavailable, falling back to window title");
         return current_file();
     }
     // Extract filename from path
@@ -74,11 +75,10 @@ pub fn current_project() -> Result<String> {
     if raw == "missing value" {
         return Ok(String::new());
     }
-    let project = if raw.starts_with("workspace document ") {
-        raw.replace("workspace document ", "")
-    } else {
-        raw
-    };
+    let project = raw
+        .strip_prefix("workspace document ")
+        .unwrap_or(&raw)
+        .to_string();
     log::debug!("Detected project: {:?}", project);
     Ok(project)
 }
