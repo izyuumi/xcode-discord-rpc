@@ -9,7 +9,7 @@ use crate::{
         current_time,
         file_language::{FileExtention, FileLanguage, ToFileLanguage},
         osascript::{check_xcode, current_file, current_project, is_xcode_frontmost},
-        sleep,
+        sleep, sleep_with_jitter,
     },
     Result,
 };
@@ -74,9 +74,15 @@ impl<'a> XcodeState<'a> {
         Ok(())
     }
 
-    /// Sleep for the configured update interval to check if Xcode/Discord is running
+    /// Sleep for the configured update interval to check if Xcode/Discord is running.
+    /// Uses jitter when backing off to avoid synchronized retries.
     fn sleep_discord_xcode(&self) {
-        sleep(self.config.update_interval * self.sleep_multiplier);
+        let base = self.config.update_interval * self.sleep_multiplier;
+        if self.sleep_multiplier > 1 {
+            sleep_with_jitter(base);
+        } else {
+            sleep(base);
+        }
     }
 
     /// Sleep for the configured Xcode update interval to check for updates

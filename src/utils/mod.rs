@@ -28,3 +28,17 @@ pub fn current_time() -> i64 {
 pub fn sleep(update_interval: u64) {
     std::thread::sleep(std::time::Duration::from_secs(update_interval));
 }
+
+/// Sleep with random jitter (±25%) to avoid synchronized retry storms.
+/// Useful for backoff loops when Discord or Xcode is not running.
+pub fn sleep_with_jitter(base_seconds: u64) {
+    // Simple deterministic-ish jitter using current time nanoseconds
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .subsec_nanos();
+    let jitter_pct = (nanos % 50) as f64 / 100.0 - 0.25; // -0.25 to +0.24
+    let duration = base_seconds as f64 * (1.0 + jitter_pct);
+    let duration = duration.max(1.0) as u64;
+    std::thread::sleep(std::time::Duration::from_secs(duration));
+}
