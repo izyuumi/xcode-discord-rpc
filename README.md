@@ -52,6 +52,24 @@ Please [create an issue](https://github.com/izyuumi/xcode-discord-rpc/issues/new
 Images are created on this figma file:
 https://www.figma.com/file/yNH9oBUxf6t4x3AXv6Xrd0/xcode-discord-rpc
 
+## Auto-Start on Login (Optional)
+
+To run xcode-discord-rpc automatically when you log in:
+
+```bash
+cp com.izyuumi.xcode-discord-rpc.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
+```
+
+To stop and remove:
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
+rm ~/Library/LaunchAgents/com.izyuumi.xcode-discord-rpc.plist
+```
+
+> **Note:** The plist assumes the binary is at `/opt/homebrew/bin/xcode-discord-rpc`. Update the path if you installed it elsewhere.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
