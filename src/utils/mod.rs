@@ -37,8 +37,8 @@ pub fn sleep_with_jitter(base_seconds: u64) {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .subsec_nanos();
-    let jitter_pct = (nanos % 50) as f64 / 100.0 - 0.25; // -0.25 to +0.24
+    let jitter_pct = (nanos % 51) as f64 / 100.0 - 0.25; // -0.25 to +0.25
     let duration = base_seconds as f64 * (1.0 + jitter_pct);
-    let duration = duration.max(1.0) as u64;
-    std::thread::sleep(std::time::Duration::from_secs(duration));
+    let duration = duration.max(1.0);
+    std::thread::sleep(std::time::Duration::from_secs_f64(duration));
 }
