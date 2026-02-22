@@ -274,6 +274,8 @@ impl XcodeState<'_> {
     fn get_project_state(&self, project: &str) -> String {
         if self.config.hide_project {
             String::from("in a Project")
+        } else if !self.config.project_name_override.is_empty() {
+            format!("in {}", self.config.project_name_override)
         } else {
             format!("in {project}")
         }
