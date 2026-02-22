@@ -11,6 +11,8 @@ const HIDE_PROJECT_ARG_ID: &str = "hide_project";
 const CONFIG_ARG_ID: &str = "config";
 /// Argument ID for disabling idle detection
 const DISABLE_IDLE_ARG_ID: &str = "disable_idle";
+/// Argument ID for verbose (debug) logging
+const VERBOSE_ARG_ID: &str = "verbose";
 /// Content of the default configuration file
 const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default.toml"));
 
@@ -30,6 +32,9 @@ pub struct AppConfig {
     pub hide_file: bool,
     /// Whether to hide the project name in Discord Rich Presence
     pub hide_project: bool,
+    /// Whether verbose (debug-level) logging is enabled
+    #[serde(default)]
+    pub verbose: bool,
 }
 
 impl AppConfig {
@@ -64,6 +69,9 @@ impl AppConfig {
         if clap_matches.get_flag(DISABLE_IDLE_ARG_ID) {
             builder = builder.set_override("disable_idle", true)?;
         }
+        if clap_matches.get_flag(VERBOSE_ARG_ID) {
+            builder = builder.set_override("verbose", true)?;
+        }
         let c = builder.build()?;
         
         Ok(c.try_deserialize()?)
@@ -89,6 +97,13 @@ impl AppConfig {
                     .num_args(0)
                     .action(ArgAction::SetTrue)
                     .help("Disable idle status detection"),
+            )
+            .arg(
+                Arg::new(VERBOSE_ARG_ID)
+                    .short('v')
+                    .long("verbose")
+                    .action(ArgAction::SetTrue)
+                    .help("Enable debug-level logging"),
             )
             .arg(
                 Arg::new(HIDE_FILE_ARG_ID)
