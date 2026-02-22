@@ -94,6 +94,11 @@ pub fn current_project() -> Result<String> {
     } else {
         raw
     };
+    // Strip common Xcode suffixes for cleaner display
+    let project = project
+        .trim_end_matches(".xcworkspace")
+        .trim_end_matches(".xcodeproj")
+        .to_string();
     log::debug!("current_project parsed: {:?}", project);
     Ok(project)
 }
