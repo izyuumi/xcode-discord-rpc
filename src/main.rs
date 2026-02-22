@@ -15,17 +15,16 @@ use utils::{init_discord_ipc, sleep};
 use xcode_state::XcodeState;
 
 fn main() -> Result<()> {
-    #[cfg(debug_assertions)]
-    SimpleLogger::new()
-        .with_level(log::LevelFilter::Debug)
-        .init()?;
-
-    #[cfg(not(debug_assertions))]
-    SimpleLogger::new()
-        .with_level(log::LevelFilter::Info)
-        .init()?;
-
     let config = AppConfig::new()?;
+
+    let log_level = if cfg!(debug_assertions) || config.verbose {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+    SimpleLogger::new()
+        .with_level(log_level)
+        .init()?;
 
     let running = Arc::new(AtomicBool::new(true));
     let running_clone = running.clone();
