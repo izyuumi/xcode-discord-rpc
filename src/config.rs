@@ -11,6 +11,8 @@ const HIDE_PROJECT_ARG_ID: &str = "hide_project";
 const CONFIG_ARG_ID: &str = "config";
 /// Argument ID for disabling idle detection
 const DISABLE_IDLE_ARG_ID: &str = "disable_idle";
+/// Argument ID for idle timeout in seconds
+const IDLE_TIMEOUT_ARG_ID: &str = "idle_timeout";
 /// Content of the default configuration file
 const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default.toml"));
 
@@ -64,6 +66,11 @@ impl AppConfig {
         if clap_matches.get_flag(DISABLE_IDLE_ARG_ID) {
             builder = builder.set_override("disable_idle", true)?;
         }
+        if let Some(timeout) = clap_matches.get_one::<String>(IDLE_TIMEOUT_ARG_ID) {
+            if let Ok(secs) = timeout.parse::<i64>() {
+                builder = builder.set_override("idle_threshold", secs)?;
+            }
+        }
         let c = builder.build()?;
         
         Ok(c.try_deserialize()?)
@@ -89,6 +96,14 @@ impl AppConfig {
                     .num_args(0)
                     .action(ArgAction::SetTrue)
                     .help("Disable idle status detection"),
+            )
+            .arg(
+                Arg::new(IDLE_TIMEOUT_ARG_ID)
+                    .short('t')
+                    .long("idle-timeout")
+                    .num_args(1)
+                    .value_name("SECONDS")
+                    .help("Seconds of inactivity before showing idle status (default: 25)"),
             )
             .arg(
                 Arg::new(HIDE_FILE_ARG_ID)
