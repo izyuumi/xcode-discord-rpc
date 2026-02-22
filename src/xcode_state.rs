@@ -159,6 +159,8 @@ impl XcodeState<'_> {
             if !project_before.eq(&project) {
                 started_at = Timestamps::new().start(current_time() * 1000);
                 project_before = project.clone();
+                file_started_at = Timestamps::new().start(current_time() * 1000);
+                file_before = String::new();
             }
 
             let is_idle = !self.config.disable_idle
@@ -176,14 +178,14 @@ impl XcodeState<'_> {
             let current_file_name = if self.config.hide_file {
                 String::new()
             } else {
-                current_file().unwrap_or_default()
+                current_file()?
             };
             if current_file_name != file_before {
                 file_started_at = Timestamps::new().start(current_time() * 1000);
-                file_before = current_file_name;
+                file_before = current_file_name.clone();
             }
 
-            self.set_working_activity(&project, &started_at, &file_started_at)?;
+            self.set_working_activity(&project, &current_file_name, &file_started_at)?;
             self.sleep_xcode_update();
             self.check_xcode()?;
         }
@@ -229,9 +231,9 @@ impl XcodeState<'_> {
     }
 
     /// Sets Discord activity to working state with project and file information
-    fn set_working_activity(&mut self, project: &str, _started_at: &Timestamps, file_started_at: &Timestamps) -> Result<()> {
+    fn set_working_activity(&mut self, project: &str, file_name: &str, file_started_at: &Timestamps) -> Result<()> {
         // Get all data first
-        let (details, (large_text, large_image)) = self.get_file_details()?;
+        let (details, (large_text, large_image)) = self.get_file_details(file_name);
         let state = self.get_project_state(project);
 
         // Use per-file timestamp so Discord shows "editing for X minutes" per file
@@ -258,27 +260,26 @@ impl XcodeState<'_> {
     }
 
     /// Retrieves detailed information about current file for Discord Rich Presence
-    fn get_file_details(&self) -> Result<(String, (String, String))> {
+    fn get_file_details(&self, file_name: &str) -> (String, (String, String)) {
         let mut file_language = FileLanguage::Unknown;
         let mut keys = (
             String::from(file_language.get_text_asset_key()),
             String::from(file_language.get_image_asset_key()),
         );
 
-        let details = if self.config.hide_file {
+        let details = if self.config.hide_file || file_name.is_empty() {
             String::from("Working on a file")
         } else {
-            let file = current_file()?;
-            let file_extension = file.get_file_extension();
+            let file_extension = file_name.get_file_extension();
             file_language = file_extension.to_file_language();
             keys = (
                 String::from(file_language.get_text_asset_key()),
                 String::from(file_language.get_image_asset_key()),
             );
-            format!("Working on {file}")
+            format!("Working on {file_name}")
         };
 
-        Ok((details, keys))
+        (details, keys)
     }
 
     /// Generates state text based on project name and configuration
