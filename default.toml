@@ -5,3 +5,4 @@ idle_threshold = 25
 disable_idle = false
 hide_file = false
 hide_project = false
+project_name_override = ""

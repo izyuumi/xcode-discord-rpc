@@ -30,6 +30,9 @@ pub struct AppConfig {
     pub hide_file: bool,
     /// Whether to hide the project name in Discord Rich Presence
     pub hide_project: bool,
+    /// Custom project name to display instead of the detected one
+    #[serde(default)]
+    pub project_name_override: String,
 }
 
 impl AppConfig {
