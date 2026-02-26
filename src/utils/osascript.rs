@@ -98,6 +98,27 @@ pub fn current_project() -> Result<String> {
     Ok(project)
 }
 
+/// Get the filesystem path of the currently active Xcode workspace/project document.
+///
+/// Returns an empty string when no workspace is open or the AppleScript call
+/// fails (e.g. Xcode is not responding).
+pub fn current_project_path() -> Result<String> {
+    let raw = run_osascript(
+        r#"
+        tell application "Xcode"
+            set doc to active workspace document
+            if doc is missing value then
+                return ""
+            end if
+            return path of doc
+        end tell
+    "#,
+    )
+    .unwrap_or_default();
+    log::debug!("current_project_path raw: {:?}", raw);
+    Ok(raw)
+}
+
 /// Check if frontmost application is Xcode
 pub fn is_xcode_frontmost() -> Result<bool> {
     let frontmost_app = run_osascript(

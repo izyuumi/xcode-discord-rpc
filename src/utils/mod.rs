@@ -2,6 +2,7 @@ use discord_rich_presence::DiscordIpcClient;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub mod file_language;
+pub mod git;
 pub mod osascript;
 
 use crate::{Error, Result};

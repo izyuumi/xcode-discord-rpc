@@ -16,14 +16,16 @@ idle_threshold = 300
 disable_idle = false
 hide_file = true
 hide_project = false
+hide_branch = false
 ```
 
 ## Command-Line Arguments
 
-Command-line arguments are also available for `hide-file` and `hide-project`.
+Command-line arguments are also available for `hide-file`, `hide-project`, and `hide-branch`.
 
 - `-f`, `--hide-file`: Hide the current file in Discord Rich Presence.
 - `-p`, `--hide-project`: Hide the current project in Discord Rich Presence.
+- `-b`, `--hide-branch`: Hide the current git branch in Discord Rich Presence.
 
 ## Configuration Options
 
@@ -63,3 +65,9 @@ Command-line arguments are also available for `hide-file` and `hide-project`.
 - **Description**: A boolean value to determine whether to hide the project name in the Discord Rich Presence.
 - **Default**: `false`
 - **Command-Line Flag**: `--hide-project` or `-p`
+
+### `hide_branch`
+
+- **Description**: A boolean value to determine whether to hide the active git branch name in the Discord Rich Presence. When `false`, the branch name is appended to the state string with a bullet separator (e.g. `in MyApp • feat/export`). The branch is resolved via `git rev-parse --abbrev-ref HEAD` from the workspace document path. If the project is not inside a git repository, this field has no effect.
+- **Default**: `false`
+- **Command-Line Flag**: `--hide-branch` or `-b`
