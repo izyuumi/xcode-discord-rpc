@@ -11,7 +11,8 @@ use crate::{
     utils::{
         current_time,
         file_language::{FileExtention, FileLanguage, ToFileLanguage},
-        osascript::{check_xcode, current_file, current_project, is_xcode_frontmost},
+        git::{format_branch_state, get_git_branch},
+        osascript::{check_xcode, current_file, current_project, current_project_path, is_xcode_frontmost},
         sleep,
     },
     Result,
@@ -172,7 +173,18 @@ impl XcodeState<'_> {
                 continue;
             }
 
-            self.set_working_activity(&project, &started_at)?;
+            // Resolve git branch from the active workspace document path.
+            let branch = if self.config.hide_branch {
+                None
+            } else {
+                let project_path = current_project_path().unwrap_or_default();
+                log::debug!("Resolving git branch for path: {:?}", project_path);
+                let b = get_git_branch(&project_path);
+                log::debug!("Git branch: {:?}", b);
+                b
+            };
+
+            self.set_working_activity(&project, &started_at, branch.as_deref())?;
             self.sleep_xcode_update();
             self.check_xcode()?;
         }
@@ -218,10 +230,15 @@ impl XcodeState<'_> {
     }
 
     /// Sets Discord activity to working state with project and file information
-    fn set_working_activity(&mut self, project: &str, started_at: &Timestamps) -> Result<()> {
+    fn set_working_activity(
+        &mut self,
+        project: &str,
+        started_at: &Timestamps,
+        branch: Option<&str>,
+    ) -> Result<()> {
         // Get all data first
         let (details, (large_text, large_image)) = self.get_file_details()?;
-        let state = self.get_project_state(project);
+        let state = self.get_project_state(project, branch);
 
         // Now use the data to set activity
         let activity = Activity::new()
@@ -270,12 +287,24 @@ impl XcodeState<'_> {
         Ok((details, keys))
     }
 
-    /// Generates state text based on project name and configuration
-    fn get_project_state(&self, project: &str) -> String {
-        if self.config.hide_project {
+    /// Generates state text based on project name, configuration and optional git branch.
+    ///
+    /// When `hide_branch` is `false` and a branch name is available, the branch
+    /// is appended to the state string with a bullet separator, e.g.
+    /// `"in MyApp • feat/export"`. Long branch names are gracefully truncated
+    /// so the combined string never exceeds Discord's 128-character state limit.
+    fn get_project_state(&self, project: &str, branch: Option<&str>) -> String {
+        let base = if self.config.hide_project {
             String::from("in a Project")
         } else {
             format!("in {project}")
+        };
+
+        match branch {
+            Some(b) if !self.config.hide_branch => {
+                format_branch_state(&base, b).unwrap_or(base)
+            }
+            _ => base,
         }
     }
 }
