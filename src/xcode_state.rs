@@ -255,7 +255,7 @@ impl XcodeState<'_> {
         );
 
         let details = if self.config.hide_file {
-            String::from("Working on a file")
+            String::from("Editing a file")
         } else {
             let file = current_file()?;
             let file_extension = file.get_file_extension();
@@ -264,7 +264,7 @@ impl XcodeState<'_> {
                 String::from(file_language.get_text_asset_key()),
                 String::from(file_language.get_image_asset_key()),
             );
-            format!("Working on {file}")
+            format!("Editing {file}")
         };
 
         Ok((details, keys))
