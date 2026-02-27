@@ -68,6 +68,6 @@ Command-line arguments are also available for `hide-file`, `hide-project`, and `
 
 ### `hide_branch`
 
-- **Description**: A boolean value to determine whether to hide the active git branch name in the Discord Rich Presence. When `false`, the branch name is appended to the state string with a bullet separator (e.g. `in MyApp • feat/export`). The branch is resolved via `git rev-parse --abbrev-ref HEAD` from the workspace document path. If the project is not inside a git repository, this field has no effect.
+- **Description**: A boolean value to determine whether to hide the active git branch name in the Discord Rich Presence. When `false`, the branch name is appended to the state string with a bullet separator (e.g. `in MyApp • feat/export`), subject to Discord's 128-byte state limit (not characters — multibyte UTF-8 characters such as `•` and `…` count as multiple bytes, so branch or workspace names may be truncated). The branch is resolved via `git rev-parse --abbrev-ref HEAD` from the workspace document path. If the project is not inside a git repository, this field has no effect.
 - **Default**: `false`
 - **Command-Line Flag**: `--hide-branch` or `-b`

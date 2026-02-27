@@ -177,10 +177,16 @@ impl XcodeState<'_> {
             let branch = if self.config.hide_branch {
                 None
             } else {
-                let project_path = current_project_path().unwrap_or_default();
-                log::debug!("Resolving git branch for path: {:?}", project_path);
+                let project_path = current_project_path().unwrap_or_default(); // errors treated as empty path
+                // Log only the basename to avoid leaking full filesystem paths.
+                let path_basename = std::path::Path::new(&project_path)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| "<unknown>".to_string());
+                log::debug!("Resolving git branch for path: {:?}", path_basename);
                 let b = get_git_branch(&project_path);
-                log::debug!("Git branch: {:?}", b);
+                // Log only whether a branch was found, not its name.
+                log::debug!("Git branch resolved: {}", if b.is_some() { "yes" } else { "no" });
                 b
             };
 
