@@ -298,7 +298,7 @@ impl XcodeState<'_> {
     /// When `hide_branch` is `false` and a branch name is available, the branch
     /// is appended to the state string with a bullet separator, e.g.
     /// `"in MyApp • feat/export"`. Long branch names are gracefully truncated
-    /// so the combined string never exceeds Discord's 128-character state limit.
+    /// so the combined string never exceeds Discord's 128-byte state limit.
     fn get_project_state(&self, project: &str, branch: Option<&str>) -> String {
         let base = if self.config.hide_project {
             String::from("in a Project")
