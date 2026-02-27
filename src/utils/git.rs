@@ -99,6 +99,11 @@ pub fn format_branch_state(base: &str, branch: &str) -> String {
         Some(n) => n,
     };
 
+    // Empty branch would produce a trailing separator — return base only.
+    if branch.is_empty() {
+        return base.to_string();
+    }
+
     if branch.len() <= available {
         // Branch fits without any truncation.
         format!("{base}{SEPARATOR}{branch}")
@@ -188,10 +193,9 @@ mod tests {
 
     #[test]
     fn format_branch_state_empty_branch() {
-        // Empty branch name — should still produce a valid string
+        // Empty branch name — should return base without trailing separator
         let result = format_branch_state("in MyApp", "");
-        // Expected: "in MyApp • " (base + separator + empty string)
-        assert_eq!(result, "in MyApp \u{2022} ");
+        assert_eq!(result, "in MyApp");
         assert!(result.len() <= 128);
     }
 }

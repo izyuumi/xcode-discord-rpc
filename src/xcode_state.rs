@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
@@ -34,6 +35,12 @@ pub struct XcodeState<'a> {
     /// Multiplier used to progressively increase sleep duration when Xcode or
     /// Discord is not running. This helps reduce CPU usage when idle.
     sleep_multiplier: u64,
+    /// TTL cache for the project path resolved via AppleScript.
+    cached_project_path: Option<String>,
+    /// TTL cache for the git branch resolved from the project path.
+    cached_branch: Option<Option<String>>,
+    /// Timestamp of the last cache population.
+    cache_populated_at: Option<Instant>,
 }
 
 impl<'a> XcodeState<'a> {
@@ -46,6 +53,9 @@ impl<'a> XcodeState<'a> {
             discord_ipc,
             discord_is_connected: false,
             sleep_multiplier: 1,
+            cached_project_path: None,
+            cached_branch: None,
+            cache_populated_at: None,
         }
     }
 
@@ -174,20 +184,42 @@ impl XcodeState<'_> {
             }
 
             // Resolve git branch from the active workspace document path.
+            // Results are cached for BRANCH_CACHE_TTL to reduce AppleScript and
+            // subprocess overhead on every update cycle (default 5 s).
+            const BRANCH_CACHE_TTL: Duration = Duration::from_secs(30);
             let branch = if self.config.hide_branch {
                 None
             } else {
-                let project_path = current_project_path().unwrap_or_default(); // errors treated as empty path
-                // Log only the basename to avoid leaking full filesystem paths.
-                let path_basename = std::path::Path::new(&project_path)
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "<unknown>".to_string());
-                log::debug!("Resolving git branch for path: {:?}", path_basename);
-                let b = get_git_branch(&project_path);
-                // Log only whether a branch was found, not its name.
-                log::debug!("Git branch resolved: {}", if b.is_some() { "yes" } else { "no" });
-                b
+                let project_path = current_project_path().unwrap_or_default();
+                let project_changed = self
+                    .cached_project_path
+                    .as_deref()
+                    .map(|p| p != project_path)
+                    .unwrap_or(true);
+                let cache_expired = project_changed
+                    || self
+                        .cache_populated_at
+                        .map(|t| t.elapsed() >= BRANCH_CACHE_TTL)
+                        .unwrap_or(true);
+
+                if cache_expired {
+                    // Log only the basename to avoid leaking full filesystem paths.
+                    let path_basename = std::path::Path::new(&project_path)
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "<unknown>".to_string());
+                    log::debug!("Resolving git branch for path: {:?}", path_basename);
+                    let b = get_git_branch(&project_path);
+                    // Log only whether a branch was found, not its name.
+                    log::debug!("Git branch resolved: {}", if b.is_some() { "yes" } else { "no" });
+                    self.cached_project_path = Some(project_path);
+                    self.cached_branch = Some(b);
+                    self.cache_populated_at = Some(Instant::now());
+                } else {
+                    log::debug!("Using cached project path and git branch");
+                }
+
+                self.cached_branch.clone().flatten()
             };
 
             self.set_working_activity(&project, &started_at, branch.as_deref())?;
