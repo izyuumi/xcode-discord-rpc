@@ -187,8 +187,6 @@ mod tests {
         let branch = "機能/新しいブランチ"; // multibyte UTF-8 branch name
         let result = format_branch_state(base, branch);
         assert!(result.len() <= 128);
-        // Result must be valid UTF-8 (not split mid-character)
-        assert!(std::str::from_utf8(result.as_bytes()).is_ok());
     }
 
     #[test]
