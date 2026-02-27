@@ -42,7 +42,7 @@ pub fn current_file() -> Result<String> {
     // Prefer reading the document path directly — it works even when the window
     // title omits the separator (e.g. project-only titles).
     if let Ok(file) = current_file_from_source_editor() {
-        if !file.is_empty() && file != "missing value" {
+        if !file.is_empty() && !file.eq_ignore_ascii_case("missing value") {
             return Ok(file);
         }
     }
