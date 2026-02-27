@@ -9,7 +9,7 @@ use std::process::Command;
 fn git_command() -> Command {
     // Prefer well-known absolute paths so the binary is found even when PATH
     // is stripped down (e.g. inside a launchd agent).
-    let candidates = ["/usr/bin/git", "/usr/local/bin/git", "git"];
+    let candidates = ["/usr/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git", "git"];
     for candidate in candidates {
         if candidate == "git" || std::path::Path::new(candidate).exists() {
             return Command::new(candidate);
