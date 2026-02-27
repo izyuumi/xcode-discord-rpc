@@ -85,6 +85,12 @@ pub fn current_file_from_source_editor() -> Result<String> {
     )?;
     log::debug!("current_file_from_source_editor raw: {:?}", raw);
 
+    // Guard against AppleScript returning the "missing value" sentinel
+    if raw.eq_ignore_ascii_case("missing value") {
+        log::debug!("current_file_from_source_editor: got \"missing value\" sentinel, returning empty");
+        return Ok(String::new());
+    }
+
     // Extract just the filename from the full path
     let file = raw
         .rsplit('/')
