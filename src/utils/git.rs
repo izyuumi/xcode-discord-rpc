@@ -55,8 +55,9 @@ pub fn get_git_branch(project_path: &str) -> Option<String> {
 /// so the result never overflows the limit even when multi-byte characters
 /// (such as the `•` separator or `…` ellipsis) are present.
 ///
-/// Returns `None` when even the base alone would exceed the limit (extremely
-/// unlikely in practice).
+/// When the base alone meets or exceeds the limit it is truncated to fit and
+/// returned as `Some(truncated_base)` — `None` is never returned by this
+/// function.
 pub fn format_branch_state(base: &str, branch: &str) -> Option<String> {
     const DISCORD_STATE_LIMIT: usize = 128;
     const SEPARATOR: &str = " • "; // 5 bytes in UTF-8
@@ -69,7 +70,16 @@ pub fn format_branch_state(base: &str, branch: &str) -> Option<String> {
         return Some(truncate_to_char_boundary(base, DISCORD_STATE_LIMIT).to_string());
     }
 
-    let available = DISCORD_STATE_LIMIT - base_len - SEPARATOR.len();
+    // Use checked_sub to avoid potential underflow when base_len is close to
+    // the limit (e.g. base_len == DISCORD_STATE_LIMIT - 1 would leave no room
+    // for the separator).
+    let available = match DISCORD_STATE_LIMIT.checked_sub(base_len + SEPARATOR.len()) {
+        None | Some(0) => {
+            // Not enough room for even the separator — return truncated base.
+            return Some(truncate_to_char_boundary(base, DISCORD_STATE_LIMIT).to_string());
+        }
+        Some(n) => n,
+    };
 
     if branch.len() <= available {
         // Branch fits without any truncation.

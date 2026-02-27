@@ -132,8 +132,7 @@ pub fn current_project_path() -> Result<String> {
             return path of doc
         end tell
     "#,
-    )
-    .unwrap_or_default();
+    )?;
     log::debug!("current_project_path raw: {:?}", raw);
     Ok(raw)
 }
