@@ -308,7 +308,7 @@ impl XcodeState<'_> {
 
         match branch {
             Some(b) if !self.config.hide_branch => {
-                format_branch_state(&base, b).unwrap_or(base)
+                format_branch_state(&base, b)
             }
             _ => base,
         }

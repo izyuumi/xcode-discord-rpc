@@ -1,6 +1,24 @@
 use std::path::Path;
 use std::process::Command;
 
+
+/// Attempt to run `git` using a list of candidate paths (absolute paths first,
+/// falling back to the bare name so the PATH is still consulted as a last
+/// resort). This is important when the app runs as a macOS launch agent where
+/// PATH is minimal and may not include the directory that contains `git`.
+fn git_command() -> Command {
+    // Prefer well-known absolute paths so the binary is found even when PATH
+    // is stripped down (e.g. inside a launchd agent).
+    let candidates = ["/usr/bin/git", "/usr/local/bin/git", "git"];
+    for candidate in candidates {
+        if candidate == "git" || std::path::Path::new(candidate).exists() {
+            return Command::new(candidate);
+        }
+    }
+    // Unreachable in practice — "git" is always tried as the final fallback.
+    Command::new("git")
+}
+
 /// Returns the name of the active git branch for the repository containing
 /// `project_path`. The path may point to a file or directory; the function
 /// walks upward to find the nearest git repository automatically (via
@@ -29,7 +47,7 @@ pub fn get_git_branch(project_path: &str) -> Option<String> {
         }
     };
 
-    let output = Command::new("git")
+    let output = git_command()
         .args(["-C", &dir, "rev-parse", "--abbrev-ref", "HEAD"])
         .output()
         .ok()?;
@@ -56,9 +74,9 @@ pub fn get_git_branch(project_path: &str) -> Option<String> {
 /// (such as the `•` separator or `…` ellipsis) are present.
 ///
 /// When the base alone meets or exceeds the limit it is truncated to fit and
-/// returned as `Some(truncated_base)` — `None` is never returned by this
-/// function.
-pub fn format_branch_state(base: &str, branch: &str) -> Option<String> {
+/// returned as a `String`. This function always returns a valid `String` and
+/// never fails.
+pub fn format_branch_state(base: &str, branch: &str) -> String {
     const DISCORD_STATE_LIMIT: usize = 128;
     const SEPARATOR: &str = " • "; // 5 bytes in UTF-8
     const ELLIPSIS: &str = "…"; // 3 bytes in UTF-8
@@ -67,7 +85,7 @@ pub fn format_branch_state(base: &str, branch: &str) -> Option<String> {
 
     if base_len >= DISCORD_STATE_LIMIT {
         // Edge case: base itself is already at/over the limit.
-        return Some(truncate_to_char_boundary(base, DISCORD_STATE_LIMIT).to_string());
+        return truncate_to_char_boundary(base, DISCORD_STATE_LIMIT).to_string();
     }
 
     // Use checked_sub to avoid potential underflow when base_len is close to
@@ -76,22 +94,22 @@ pub fn format_branch_state(base: &str, branch: &str) -> Option<String> {
     let available = match DISCORD_STATE_LIMIT.checked_sub(base_len + SEPARATOR.len()) {
         None | Some(0) => {
             // Not enough room for even the separator — return truncated base.
-            return Some(truncate_to_char_boundary(base, DISCORD_STATE_LIMIT).to_string());
+            return truncate_to_char_boundary(base, DISCORD_STATE_LIMIT).to_string();
         }
         Some(n) => n,
     };
 
     if branch.len() <= available {
         // Branch fits without any truncation.
-        Some(format!("{base}{SEPARATOR}{branch}"))
+        format!("{base}{SEPARATOR}{branch}")
     } else if available > ELLIPSIS.len() {
         // Truncate the branch so that branch_bytes + ellipsis_bytes == available.
         let max_branch_bytes = available - ELLIPSIS.len();
         let truncated = truncate_to_char_boundary(branch, max_branch_bytes);
-        Some(format!("{base}{SEPARATOR}{truncated}{ELLIPSIS}"))
+        format!("{base}{SEPARATOR}{truncated}{ELLIPSIS}")
     } else {
         // Not enough room even for one branch character — omit the branch.
-        Some(base.to_string())
+        base.to_string()
     }
 }
 
@@ -115,7 +133,7 @@ mod tests {
 
     #[test]
     fn format_branch_state_short() {
-        let result = format_branch_state("in MyApp", "main").unwrap();
+        let result = format_branch_state("in MyApp", "main");
         assert_eq!(result, "in MyApp • main");
     }
 
@@ -124,7 +142,7 @@ mod tests {
         let base = "in MyApp";
         // Create a branch name that would exceed the limit
         let long_branch = "a".repeat(200);
-        let result = format_branch_state(base, &long_branch).unwrap();
+        let result = format_branch_state(base, &long_branch);
         assert!(result.len() <= 128);
         assert!(result.contains('…'));
     }
@@ -134,7 +152,7 @@ mod tests {
         let base = "in X";
         // Fill remaining space exactly
         let branch = "b".repeat(128 - base.len() - " • ".len());
-        let result = format_branch_state(base, &branch).unwrap();
+        let result = format_branch_state(base, &branch);
         assert_eq!(result.len(), 128);
         assert!(!result.contains('…'));
     }
@@ -143,7 +161,7 @@ mod tests {
     fn format_branch_state_base_at_limit() {
         // base is exactly 128 bytes — should be returned as-is (truncated to limit)
         let base = "a".repeat(128);
-        let result = format_branch_state(&base, "main").unwrap();
+        let result = format_branch_state(&base, "main");
         assert!(result.len() <= 128);
         // Branch should not appear when base alone fills the limit
         assert!(!result.contains("main"));
@@ -153,7 +171,7 @@ mod tests {
     fn format_branch_state_base_exceeds_limit() {
         // base exceeds 128 bytes — should be truncated
         let base = "a".repeat(200);
-        let result = format_branch_state(&base, "main").unwrap();
+        let result = format_branch_state(&base, "main");
         assert!(result.len() <= 128);
     }
 
@@ -162,7 +180,7 @@ mod tests {
         // Japanese characters are 3 bytes each in UTF-8
         let base = "in MyApp";
         let branch = "機能/新しいブランチ"; // multibyte UTF-8 branch name
-        let result = format_branch_state(base, branch).unwrap();
+        let result = format_branch_state(base, branch);
         assert!(result.len() <= 128);
         // Result must be valid UTF-8 (not split mid-character)
         assert!(std::str::from_utf8(result.as_bytes()).is_ok());
@@ -171,8 +189,9 @@ mod tests {
     #[test]
     fn format_branch_state_empty_branch() {
         // Empty branch name — should still produce a valid string
-        let result = format_branch_state("in MyApp", "").unwrap();
-        // With an empty branch the separator + empty string is appended
+        let result = format_branch_state("in MyApp", "");
+        // Expected: "in MyApp • " (base + separator + empty string)
+        assert_eq!(result, "in MyApp \u{2022} ");
         assert!(result.len() <= 128);
     }
 }
