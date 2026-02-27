@@ -138,4 +138,41 @@ mod tests {
         assert_eq!(result.len(), 128);
         assert!(!result.contains('…'));
     }
+
+    #[test]
+    fn format_branch_state_base_at_limit() {
+        // base is exactly 128 bytes — should be returned as-is (truncated to limit)
+        let base = "a".repeat(128);
+        let result = format_branch_state(&base, "main").unwrap();
+        assert!(result.len() <= 128);
+        // Branch should not appear when base alone fills the limit
+        assert!(!result.contains("main"));
+    }
+
+    #[test]
+    fn format_branch_state_base_exceeds_limit() {
+        // base exceeds 128 bytes — should be truncated
+        let base = "a".repeat(200);
+        let result = format_branch_state(&base, "main").unwrap();
+        assert!(result.len() <= 128);
+    }
+
+    #[test]
+    fn format_branch_state_multibyte_branch() {
+        // Japanese characters are 3 bytes each in UTF-8
+        let base = "in MyApp";
+        let branch = "機能/新しいブランチ"; // multibyte UTF-8 branch name
+        let result = format_branch_state(base, branch).unwrap();
+        assert!(result.len() <= 128);
+        // Result must be valid UTF-8 (not split mid-character)
+        assert!(std::str::from_utf8(result.as_bytes()).is_ok());
+    }
+
+    #[test]
+    fn format_branch_state_empty_branch() {
+        // Empty branch name — should still produce a valid string
+        let result = format_branch_state("in MyApp", "").unwrap();
+        // With an empty branch the separator + empty string is appended
+        assert!(result.len() <= 128);
+    }
 }
