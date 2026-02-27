@@ -58,13 +58,16 @@ pub fn current_file() -> Result<String> {
     log::debug!("current_file (window title) raw: {:?}", raw);
 
     // The window title format is "FileName.swift — ProjectName"; take the first part.
-    let file = if raw.contains(" — ") {
-        raw.split(" — ").collect::<Vec<&str>>()[0].to_string()
-    } else {
-        raw
-    };
+    let file = raw
+        .rsplit_once(" — ")
+        .map(|(file, _project)| file.to_string())
+        .unwrap_or(raw);
     log::debug!("current_file (window title) parsed: {:?}", file);
-    Ok(file)
+    if file.eq_ignore_ascii_case("missing value") {
+        Ok(String::new())
+    } else {
+        Ok(file)
+    }
 }
 
 /// Get the current file name from the active source editor document path.
