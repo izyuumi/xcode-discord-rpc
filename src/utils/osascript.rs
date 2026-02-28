@@ -125,8 +125,9 @@ pub fn current_project() -> Result<String> {
 
 /// Get the filesystem path of the currently active Xcode workspace/project document.
 ///
-/// Returns an empty string when no workspace is open or the AppleScript call
-/// fails (e.g. Xcode is not responding).
+/// Returns an empty string when no workspace is open.
+///
+/// Propagates AppleScript execution errors to the caller.
 pub fn current_project_path() -> Result<String> {
     let raw = run_osascript(
         r#"
