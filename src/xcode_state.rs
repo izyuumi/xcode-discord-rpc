@@ -184,8 +184,8 @@ impl XcodeState<'_> {
             }
 
             // Resolve git branch from the active workspace document path.
-            // Results are cached for BRANCH_CACHE_TTL to reduce AppleScript and
-            // subprocess overhead on every update cycle (default 5 s).
+            // Results are cached for BRANCH_CACHE_TTL to reduce git subprocess overhead.
+            // Note: current_project_path() (AppleScript) still runs every update cycle.
             const BRANCH_CACHE_TTL: Duration = Duration::from_secs(30);
             let branch = if self.config.hide_branch {
                 None
