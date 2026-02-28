@@ -1,22 +1,40 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::OnceLock;
 
-
-/// Attempt to run `git` using a list of candidate paths (absolute paths first,
-/// falling back to the bare name so the PATH is still consulted as a last
-/// resort). This is important when the app runs as a macOS launch agent where
-/// PATH is minimal and may not include the directory that contains `git`.
+/// Resolve the `git` binary path once and reuse it for subsequent calls.
+///
+/// We try well-known absolute paths first, then fall back to the bare `git`
+/// name so that PATH is still consulted as a last resort. This is important
+/// when the app runs as a macOS launch agent where PATH is minimal and may not
+/// include the directory that contains `git`.
 fn git_command() -> Command {
-    // Prefer well-known absolute paths so the binary is found even when PATH
-    // is stripped down (e.g. inside a launchd agent).
-    let candidates = ["/usr/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git", "git"];
-    for candidate in candidates {
-        if candidate == "git" || std::path::Path::new(candidate).exists() {
-            return Command::new(candidate);
+    static RESOLVED_GIT_PATH: OnceLock<PathBuf> = OnceLock::new();
+
+    let git_path = RESOLVED_GIT_PATH.get_or_init(|| {
+        // Prefer well-known absolute paths so the binary is found even when PATH
+        // is stripped down (e.g. inside a launchd agent).
+        let candidates = ["/usr/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git", "git"];
+
+        for candidate in candidates {
+            if candidate == "git" || Path::new(candidate).exists() {
+                // Ensure the candidate is runnable by validating `git --version`.
+                if Command::new(candidate)
+                    .arg("--version")
+                    .output()
+                    .map(|o| o.status.success())
+                    .unwrap_or(false)
+                {
+                    return PathBuf::from(candidate);
+                }
+            }
         }
-    }
-    // Unreachable in practice — "git" is always tried as the final fallback.
-    Command::new("git")
+
+        // Final fallback (should be unreachable in practice because "git" is always tried).
+        PathBuf::from("git")
+    });
+
+    Command::new(git_path)
 }
 
 /// Returns the name of the active git branch for the repository containing
