@@ -156,7 +156,7 @@ impl XcodeState<'_> {
     /// Manages the Discord session and continuously updates Rich Presence based on Xcode activity
     fn handle_discord_session(&mut self) -> Result<()> {
         let mut started_at = Timestamps::new().start(current_time() * 1000);
-        let mut project_before = String::from("");
+        let mut state_before: (String, Option<String>) = (String::from(""), None);
         let mut last_frontmost_at = current_time();
 
         self.reset_sleep_multiplier();
@@ -166,11 +166,6 @@ impl XcodeState<'_> {
 
             self.update_frontmost_time(&mut last_frontmost_at)?;
             let project = self.get_current_project()?;
-
-            if !project_before.eq(&project) {
-                started_at = Timestamps::new().start(current_time() * 1000);
-                project_before = project.clone();
-            }
 
             let is_idle = !self.config.disable_idle
                 && current_time() - last_frontmost_at > self.config.idle_threshold;
@@ -229,6 +224,14 @@ impl XcodeState<'_> {
                 self.cached_branch.clone().flatten()
             };
 
+            // Reset the session timer when either the project or git branch changes.
+            // (This improves accuracy when switching branches without changing project.)
+            let state_now = (project.clone(), branch.clone());
+            if state_before != state_now {
+                started_at = Timestamps::new().start(current_time() * 1000);
+                state_before = state_now;
+            }
+
             self.set_working_activity(&project, &started_at, branch.as_deref())?;
             self.sleep_xcode_update();
             self.check_xcode()?;
@@ -236,6 +239,11 @@ impl XcodeState<'_> {
 
         log::info!("Xcode stopped, clearing Discord activity");
         self.clear_activity()?;
+
+        // Clear cached path/branch info so the next Xcode session starts fresh.
+        self.cached_project_path = None;
+        self.cached_branch = None;
+        self.cache_populated_at = None;
         Ok(())
     }
 

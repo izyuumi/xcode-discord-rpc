@@ -14,7 +14,7 @@ fn git_command() -> Command {
     let git_path = RESOLVED_GIT_PATH.get_or_init(|| {
         // Prefer well-known absolute paths so the binary is found even when PATH
         // is stripped down (e.g. inside a launchd agent).
-        let candidates = ["/usr/bin/git", "/usr/local/bin/git", "/opt/homebrew/bin/git", "git"];
+        let candidates = ["/opt/homebrew/bin/git", "/usr/local/bin/git", "/usr/bin/git", "git"];
 
         for candidate in candidates {
             if candidate == "git" || Path::new(candidate).exists() {

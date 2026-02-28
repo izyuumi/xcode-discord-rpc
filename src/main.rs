@@ -43,7 +43,10 @@ fn main() -> Result<()> {
             log::error!("{}", err);
             log::debug!("Trying to reconnect...");
         }
-        sleep(config.update_interval)
+        // Avoid delaying shutdown: only sleep if we are still running after the RPC attempt.
+        if running.load(Ordering::SeqCst) {
+            sleep(config.update_interval);
+        }
     }
 
     log::info!("Shutting down cleanly");
