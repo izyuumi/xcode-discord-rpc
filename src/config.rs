@@ -7,6 +7,10 @@ use std::path::PathBuf;
 const HIDE_FILE_ARG_ID: &str = "hide_file";
 /// Argument ID for hiding the project name in Discord Rich Presence
 const HIDE_PROJECT_ARG_ID: &str = "hide_project";
+/// Argument ID for the custom config file path
+const CONFIG_ARG_ID: &str = "config";
+/// Argument ID for disabling idle detection
+const DISABLE_IDLE_ARG_ID: &str = "disable_idle";
 /// Content of the default configuration file
 const DEFAULT_CONFIG: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/default.toml"));
 
@@ -35,7 +39,12 @@ impl AppConfig {
         let mut builder =
             Config::builder().add_source(File::from_str(DEFAULT_CONFIG, FileFormat::Toml));
 
-        if let Some(home) = std::env::var_os("HOME") {
+        // Config file: use --config path if provided, otherwise default location
+        if let Some(config_path) = clap_matches.get_one::<String>(CONFIG_ARG_ID) {
+            let path = PathBuf::from(config_path);
+            log::debug!("Using custom config file: {:?}", path);
+            builder = builder.add_source(File::from(path).required(true));
+        } else if let Some(home) = std::env::var_os("HOME") {
             let config_path = PathBuf::from(home)
                 .join(".config")
                 .join("xcode-discord-rpc")
@@ -44,12 +53,19 @@ impl AppConfig {
             builder = builder.add_source(File::from(config_path).required(false));
         }
 
-        let c = builder
-            .add_source(Environment::with_prefix("XDRPC").separator("__"))
-            .set_override("hide_file", clap_matches.get_flag(HIDE_FILE_ARG_ID))?
-            .set_override("hide_project", clap_matches.get_flag(HIDE_PROJECT_ARG_ID))?
-            .build()?;
-
+        let mut builder = builder
+            .add_source(Environment::with_prefix("XDRPC").separator("__"));
+        if clap_matches.get_flag(HIDE_FILE_ARG_ID) {
+            builder = builder.set_override("hide_file", true)?;
+        }
+        if clap_matches.get_flag(HIDE_PROJECT_ARG_ID) {
+            builder = builder.set_override("hide_project", true)?;
+        }
+        if clap_matches.get_flag(DISABLE_IDLE_ARG_ID) {
+            builder = builder.set_override("disable_idle", true)?;
+        }
+        let c = builder.build()?;
+        
         Ok(c.try_deserialize()?)
     }
 
@@ -59,13 +75,28 @@ impl AppConfig {
             .author(clap::crate_authors!())
             .about("Displays Xcode status on Discord Rich Presence")
             .arg(
+                Arg::new(CONFIG_ARG_ID)
+                    .short('c')
+                    .long("config")
+                    .num_args(1)
+                    .value_name("PATH")
+                    .help("Path to a custom config file (required if specified)"),
+            )
+            .arg(
+                Arg::new(DISABLE_IDLE_ARG_ID)
+                    .short('i')
+                    .long("disable-idle")
+                    .num_args(0)
+                    .action(ArgAction::SetTrue)
+                    .help("Disable idle status detection"),
+            )
+            .arg(
                 Arg::new(HIDE_FILE_ARG_ID)
                     .short('f')
                     .long("hide-file")
                     .num_args(0)
                     .action(ArgAction::SetTrue)
-                    .help("Hide current file in Discord Rich Presence")
-                    .default_value("false"),
+                    .help("Hide current file in Discord Rich Presence"),
             )
             .arg(
                 Arg::new(HIDE_PROJECT_ARG_ID)
@@ -73,8 +104,7 @@ impl AppConfig {
                     .long("hide-project")
                     .num_args(0)
                     .action(ArgAction::SetTrue)
-                    .help("Hide current project in Discord Rich Presence")
-                    .default_value("false"),
+                    .help("Hide current project in Discord Rich Presence"),
             )
             .get_matches()
     }
