@@ -190,11 +190,18 @@ impl XcodeState<'_> {
             let branch = if self.config.hide_branch {
                 None
             } else {
-                let project_path = current_project_path().unwrap_or_default();
+                let project_path = match current_project_path() {
+                    Ok(p) => p,
+                    Err(e) => {
+                        // Avoid leaking full filesystem paths in logs.
+                        log::debug!("Failed to resolve active project path: {}", e);
+                        String::new()
+                    }
+                };
                 let project_changed = self
                     .cached_project_path
                     .as_deref()
-                    .map(|p| p != project_path)
+                    .map(|p| p != project_path.as_str())
                     .unwrap_or(true);
                 let cache_expired = project_changed
                     || self

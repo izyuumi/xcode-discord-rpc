@@ -42,7 +42,6 @@ fn main() -> Result<()> {
         if let Err(err) = discord_rpc(&config, &running) {
             log::error!("{}", err);
             log::debug!("Trying to reconnect...");
-            sleep(config.update_interval)
         }
         sleep(config.update_interval)
     }

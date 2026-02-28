@@ -30,7 +30,7 @@ fn git_command() -> Command {
             }
         }
 
-        // Final fallback (should be unreachable in practice because "git" is always tried).
+        // Final fallback (when no candidate passed the usability check).
         PathBuf::from("git")
     });
 

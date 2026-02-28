@@ -20,6 +20,28 @@ impl Error {
     /// Returns true if the error is transient and may resolve on retry
     /// (e.g. Discord IPC disconnects, AppleScript timeouts, IO failures).
     pub fn is_transient(&self) -> bool {
-        matches!(self, Error::DiscordIpc(_) | Error::Oascript(_) | Error::Io(_))
+        match self {
+            // Discord IPC failures are typically recoverable by reconnecting.
+            Error::DiscordIpc(_) => true,
+
+            // AppleScript failures are often transient (Xcode not ready / busy / not responding).
+            Error::Oascript(_) => true,
+
+            // Only treat *some* IO errors as transient; many (e.g. NotFound/PermissionDenied)
+            // are persistent and should not be blindly retried.
+            Error::Io(e) => matches!(
+                e.kind(),
+                std::io::ErrorKind::Interrupted
+                    | std::io::ErrorKind::WouldBlock
+                    | std::io::ErrorKind::TimedOut
+                    | std::io::ErrorKind::ConnectionRefused
+                    | std::io::ErrorKind::ConnectionReset
+                    | std::io::ErrorKind::ConnectionAborted
+                    | std::io::ErrorKind::NotConnected
+                    | std::io::ErrorKind::BrokenPipe
+            ),
+
+            _ => false,
+        }
     }
 }

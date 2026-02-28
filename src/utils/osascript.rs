@@ -45,10 +45,9 @@ pub fn current_file() -> Result<String> {
     )?;
     log::debug!("current_file raw: {:?}", raw);
 
-    let file = if raw.contains(" — ") {
-        raw.split(" — ").collect::<Vec<&str>>()[1].to_string()
-    } else {
-        raw
+    let file = match raw.split_once(" — ") {
+        Some((_, file)) => file.to_string(),
+        None => raw,
     };
     log::debug!("current_file parsed: {:?}", file);
     Ok(file)
@@ -100,8 +99,9 @@ pub fn current_project() -> Result<String> {
 
 /// Get the filesystem path of the currently active Xcode workspace/project document.
 ///
-/// Returns an empty string when no workspace is open or the AppleScript call
-/// fails (e.g. Xcode is not responding).
+/// Returns an empty string when no workspace is open.
+///
+/// Any AppleScript/osascript execution errors are propagated via `Result`.
 pub fn current_project_path() -> Result<String> {
     let raw = run_osascript(
         r#"

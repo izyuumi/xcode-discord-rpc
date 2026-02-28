@@ -21,8 +21,10 @@ hide_branch = false
 
 ## Command-Line Arguments
 
-Command-line arguments are also available for `hide-file`, `hide-project`, and `hide-branch`.
+Command-line arguments are also available for configuration and feature toggles:
 
+- `-c`, `--config <PATH>`: Path to a custom config file (required if specified).
+- `-i`, `--disable-idle`: Disable idle status detection.
 - `-f`, `--hide-file`: Hide the current file in Discord Rich Presence.
 - `-p`, `--hide-project`: Hide the current project in Discord Rich Presence.
 - `-b`, `--hide-branch`: Hide the current git branch in Discord Rich Presence.
