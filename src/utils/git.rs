@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 use std::process::Command;
 
@@ -12,22 +13,7 @@ use std::process::Command;
 /// - the repository is in a detached-HEAD state (returns `"HEAD"`)
 /// - any other git or I/O error occurs
 pub fn get_git_branch(project_path: &str) -> Option<String> {
-    if project_path.is_empty() {
-        return None;
-    }
-
-    // Resolve the directory to run git in: if the path points to a file,
-    // use its parent directory so `git -C` receives a directory.
-    let dir = {
-        let p = Path::new(project_path);
-        if p.is_file() {
-            p.parent()
-                .map(|d| d.to_string_lossy().to_string())
-                .unwrap_or_else(|| project_path.to_string())
-        } else {
-            project_path.to_string()
-        }
-    };
+    let dir = resolve_git_dir(project_path)?;
 
     let output = Command::new("git")
         .args(["-C", &dir, "rev-parse", "--abbrev-ref", "HEAD"])
@@ -46,6 +32,58 @@ pub fn get_git_branch(project_path: &str) -> Option<String> {
     }
 
     Some(branch)
+}
+
+/// Returns a stable fingerprint for the repository's current HEAD state.
+///
+/// `Some(Some(...))` means HEAD was read successfully, including detached-HEAD
+/// commit hashes. `Some(None)` means the path is not in a git repository or no
+/// HEAD content could be derived. `None` means the HEAD lookup itself failed
+/// transiently (for example, the HEAD file could not be read).
+pub fn get_git_head_ref(project_path: &str) -> Option<Option<String>> {
+    let dir = resolve_git_dir(project_path)?;
+
+    let output = Command::new("git")
+        .args(["-C", &dir, "rev-parse", "--git-path", "HEAD"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return Some(None);
+    }
+
+    let head_path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if head_path.is_empty() {
+        return Some(None);
+    }
+
+    let head_contents = fs::read_to_string(Path::new(&dir).join(head_path)).ok()?;
+    let head_ref = head_contents.trim().to_string();
+
+    if head_ref.is_empty() {
+        Some(None)
+    } else {
+        Some(Some(head_ref))
+    }
+}
+
+fn resolve_git_dir(project_path: &str) -> Option<String> {
+    if project_path.is_empty() {
+        return None;
+    }
+
+    // Resolve the directory to run git in: if the path points to a file,
+    // use its parent directory so `git -C` receives a directory.
+    let p = Path::new(project_path);
+    if p.is_file() {
+        Some(
+            p.parent()
+                .map(|d| d.to_string_lossy().to_string())
+                .unwrap_or_else(|| project_path.to_string()),
+        )
+    } else {
+        Some(project_path.to_string())
+    }
 }
 
 /// Truncate a branch name so that the full state string
