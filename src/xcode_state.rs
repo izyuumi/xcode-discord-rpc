@@ -12,7 +12,7 @@ use crate::{
     utils::{
         current_time,
         file_language::{FileExtention, FileLanguage, ToFileLanguage},
-        git::{format_branch_state, get_git_branch},
+        git::{format_branch_state, get_git_branch, get_git_head_ref},
         osascript::{check_xcode, current_file, current_project, current_project_path, is_xcode_frontmost},
         sleep,
     },
@@ -39,6 +39,8 @@ pub struct XcodeState<'a> {
     cached_project_path: Option<String>,
     /// TTL cache for the git branch resolved from the project path.
     cached_branch: Option<Option<String>>,
+    /// Latest observed git HEAD marker for the cached project path.
+    cached_head_ref: Option<Option<String>>,
     /// Timestamp of the last cache population.
     cache_populated_at: Option<Instant>,
 }
@@ -55,6 +57,7 @@ impl<'a> XcodeState<'a> {
             sleep_multiplier: 1,
             cached_project_path: None,
             cached_branch: None,
+            cached_head_ref: None,
             cache_populated_at: None,
         }
     }
@@ -179,7 +182,8 @@ impl XcodeState<'_> {
             }
 
             // Resolve git branch from the active workspace document path.
-            // Results are cached for BRANCH_CACHE_TTL to reduce git subprocess overhead.
+            // Results are cached for BRANCH_CACHE_TTL, but invalidate early when
+            // the repository HEAD changes so branch switches are reflected quickly.
             // Note: current_project_path() (AppleScript) still runs every update cycle.
             const BRANCH_CACHE_TTL: Duration = Duration::from_secs(30);
             let branch = if self.config.hide_branch {
@@ -198,7 +202,15 @@ impl XcodeState<'_> {
                     .as_deref()
                     .map(|p| p != project_path.as_str())
                     .unwrap_or(true);
+                let head_ref = get_git_head_ref(&project_path);
+                let head_changed = !project_changed
+                    && self
+                        .cached_head_ref
+                        .as_ref()
+                        .map(|cached| cached != &head_ref)
+                        .unwrap_or(false);
                 let cache_expired = project_changed
+                    || head_changed
                     || self
                         .cache_populated_at
                         .map(|t| t.elapsed() >= BRANCH_CACHE_TTL)
@@ -216,6 +228,7 @@ impl XcodeState<'_> {
                     log::debug!("Git branch resolved: {}", if b.is_some() { "yes" } else { "no" });
                     self.cached_project_path = Some(project_path);
                     self.cached_branch = Some(b);
+                    self.cached_head_ref = Some(head_ref);
                     self.cache_populated_at = Some(Instant::now());
                 } else {
                     log::debug!("Using cached project path and git branch");
@@ -243,6 +256,7 @@ impl XcodeState<'_> {
         // Clear cached path/branch info so the next Xcode session starts fresh.
         self.cached_project_path = None;
         self.cached_branch = None;
+        self.cached_head_ref = None;
         self.cache_populated_at = None;
         Ok(())
     }

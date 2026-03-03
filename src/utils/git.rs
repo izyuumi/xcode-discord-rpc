@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::OnceLock;
@@ -48,22 +49,7 @@ fn git_command() -> Command {
 /// - the repository is in a detached-HEAD state (returns `"HEAD"`)
 /// - any other git or I/O error occurs
 pub fn get_git_branch(project_path: &str) -> Option<String> {
-    if project_path.is_empty() {
-        return None;
-    }
-
-    // Resolve the directory to run git in: if the path points to a file,
-    // use its parent directory so `git -C` receives a directory.
-    let dir = {
-        let p = Path::new(project_path);
-        if p.is_file() {
-            p.parent()
-                .map(|d| d.to_string_lossy().to_string())
-                .unwrap_or_else(|| project_path.to_string())
-        } else {
-            project_path.to_string()
-        }
-    };
+    let dir = git_work_dir(project_path)?;
 
     let output = git_command()
         .args(["-C", &dir, "rev-parse", "--abbrev-ref", "HEAD"])
@@ -82,6 +68,58 @@ pub fn get_git_branch(project_path: &str) -> Option<String> {
     }
 
     Some(branch)
+}
+
+/// Returns the current contents of the repository's `HEAD` file for the git
+/// repository containing `project_path`.
+///
+/// This is a cheap change detector for branch switches inside the same
+/// workspace: symbolic refs change when switching branches, and detached HEAD
+/// values change when checking out a different commit.
+pub fn get_git_head_ref(project_path: &str) -> Option<String> {
+    let dir = git_work_dir(project_path)?;
+
+    let output = git_command()
+        .args(["-C", &dir, "rev-parse", "--absolute-git-dir"])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let git_dir = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if git_dir.is_empty() {
+        return None;
+    }
+
+    let head = fs::read_to_string(Path::new(&git_dir).join("HEAD")).ok()?;
+    let head = head.trim().to_string();
+
+    if head.is_empty() {
+        return None;
+    }
+
+    Some(head)
+}
+
+fn git_work_dir(project_path: &str) -> Option<String> {
+    if project_path.is_empty() {
+        return None;
+    }
+
+    // Resolve the directory to run git in: if the path points to a file,
+    // use its parent directory so `git -C` receives a directory.
+    let p = Path::new(project_path);
+    if p.is_file() {
+        Some(
+            p.parent()
+                .map(|d| d.to_string_lossy().to_string())
+                .unwrap_or_else(|| project_path.to_string()),
+        )
+    } else {
+        Some(project_path.to_string())
+    }
 }
 
 /// Truncate a branch name so that the full state string
