@@ -226,10 +226,14 @@ impl XcodeState<'_> {
                     let b = get_git_branch(&project_path);
                     // Log only whether a branch was found, not its name.
                     log::debug!("Git branch resolved: {}", if b.is_some() { "yes" } else { "no" });
-                    self.cached_project_path = Some(project_path);
-                    self.cached_branch = Some(b);
-                    self.cached_head_ref = Some(head_ref);
-                    self.cache_populated_at = Some(Instant::now());
+                    if let Some(branch) = b {
+                        self.cached_project_path = Some(project_path);
+                        self.cached_branch = Some(Some(branch));
+                        self.cached_head_ref = Some(head_ref);
+                        self.cache_populated_at = Some(Instant::now());
+                    } else {
+                        log::debug!("Preserving cached git branch after lookup failure");
+                    }
                 } else {
                     log::debug!("Using cached project path and git branch");
                 }
