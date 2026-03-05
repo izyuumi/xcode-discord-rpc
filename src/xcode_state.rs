@@ -232,7 +232,11 @@ impl XcodeState<'_> {
                         self.cached_head_ref = Some(head_ref);
                         self.cache_populated_at = Some(Instant::now());
                     } else {
-                        log::debug!("Preserving cached git branch after lookup failure");
+                        log::debug!("Clearing cached git branch after lookup failure");
+                        self.cached_project_path = Some(project_path);
+                        self.cached_branch = Some(None);
+                        self.cached_head_ref = Some(head_ref);
+                        self.cache_populated_at = Some(Instant::now());
                     }
                 } else {
                     log::debug!("Using cached project path and git branch");
