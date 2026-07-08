@@ -5,9 +5,7 @@
 
 ### Features
 
-* improve error types and add --config flag ([d026df2](https://github.com/izyuumi/xcode-discord-rpc/commit/d026df2b6a1f1530affd26d046a31e847c56b9c8))
 * improve error types and add --config flag ([#59](https://github.com/izyuumi/xcode-discord-rpc/issues/59)) ([b8217c6](https://github.com/izyuumi/xcode-discord-rpc/commit/b8217c651e2731ffb4f70fb03c636f6ed299e27a))
-* osascript error propagation, --disable-idle flag, debug logging, graceful shutdown ([e39d97c](https://github.com/izyuumi/xcode-discord-rpc/commit/e39d97cbf03beef139bf39ab6052298fd2820ab8))
 * osascript error propagation, --disable-idle flag, debug logging, graceful shutdown ([#61](https://github.com/izyuumi/xcode-discord-rpc/issues/61)) ([5174e44](https://github.com/izyuumi/xcode-discord-rpc/commit/5174e446cfecc34d8ec95833d19057d1629b280e))
 
 

@@ -1,5 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use discord_rich_presence::{
     activity::{Activity, Assets, Timestamps},
@@ -11,7 +12,8 @@ use crate::{
     utils::{
         current_time,
         file_language::{FileExtention, FileLanguage, ToFileLanguage},
-        osascript::{check_xcode, current_file, current_project, is_xcode_frontmost},
+        git::{format_branch_state, get_git_branch, get_git_head_ref},
+        osascript::{check_xcode, current_file, current_project, current_project_path, is_xcode_frontmost},
         sleep,
     },
     Result,
@@ -33,6 +35,14 @@ pub struct XcodeState<'a> {
     /// Multiplier used to progressively increase sleep duration when Xcode or
     /// Discord is not running. This helps reduce CPU usage when idle.
     sleep_multiplier: u64,
+    /// TTL cache for the project path resolved via AppleScript.
+    cached_project_path: Option<String>,
+    /// TTL cache for the git branch resolved from the project path.
+    cached_branch: Option<Option<String>>,
+    /// Latest observed git HEAD marker for the cached project path.
+    cached_head_ref: Option<Option<String>>,
+    /// Timestamp of the last cache population.
+    cache_populated_at: Option<Instant>,
 }
 
 impl<'a> XcodeState<'a> {
@@ -45,6 +55,10 @@ impl<'a> XcodeState<'a> {
             discord_ipc,
             discord_is_connected: false,
             sleep_multiplier: 1,
+            cached_project_path: None,
+            cached_branch: None,
+            cached_head_ref: None,
+            cache_populated_at: None,
         }
     }
 
@@ -145,7 +159,7 @@ impl XcodeState<'_> {
     /// Manages the Discord session and continuously updates Rich Presence based on Xcode activity
     fn handle_discord_session(&mut self) -> Result<()> {
         let mut started_at = Timestamps::new().start(current_time() * 1000);
-        let mut project_before = String::from("");
+        let mut state_before: (String, Option<String>) = (String::from(""), None);
         let mut last_frontmost_at = current_time();
 
         self.reset_sleep_multiplier();
@@ -155,11 +169,6 @@ impl XcodeState<'_> {
 
             self.update_frontmost_time(&mut last_frontmost_at)?;
             let project = self.get_current_project()?;
-
-            if !project_before.eq(&project) {
-                started_at = Timestamps::new().start(current_time() * 1000);
-                project_before = project.clone();
-            }
 
             let is_idle = !self.config.disable_idle
                 && current_time() - last_frontmost_at > self.config.idle_threshold;
@@ -172,13 +181,91 @@ impl XcodeState<'_> {
                 continue;
             }
 
-            self.set_working_activity(&project, &started_at)?;
+            // Resolve git branch from the active workspace document path.
+            // Results are cached for BRANCH_CACHE_TTL, but invalidate early when
+            // the repository HEAD changes so branch switches are reflected quickly.
+            // Note: current_project_path() (AppleScript) still runs every update cycle.
+            const BRANCH_CACHE_TTL: Duration = Duration::from_secs(30);
+            let branch = if self.config.hide_branch {
+                None
+            } else {
+                let project_path = match current_project_path() {
+                    Ok(p) => p,
+                    Err(e) => {
+                        // Avoid leaking full filesystem paths in logs.
+                        log::debug!("Failed to resolve active project path: {}", e);
+                        String::new()
+                    }
+                };
+                let project_changed = self
+                    .cached_project_path
+                    .as_deref()
+                    .map(|p| p != project_path.as_str())
+                    .unwrap_or(true);
+                let head_ref = get_git_head_ref(&project_path);
+                let head_changed = !project_changed
+                    && self
+                        .cached_head_ref
+                        .as_ref()
+                        .map(|cached| cached != &head_ref)
+                        .unwrap_or(false);
+                let cache_expired = project_changed
+                    || head_changed
+                    || self
+                        .cache_populated_at
+                        .map(|t| t.elapsed() >= BRANCH_CACHE_TTL)
+                        .unwrap_or(true);
+
+                if cache_expired {
+                    // Log only the basename to avoid leaking full filesystem paths.
+                    let path_basename = std::path::Path::new(&project_path)
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| "<unknown>".to_string());
+                    log::debug!("Resolving git branch for path: {:?}", path_basename);
+                    let b = get_git_branch(&project_path);
+                    // Log only whether a branch was found, not its name.
+                    log::debug!("Git branch resolved: {}", if b.is_some() { "yes" } else { "no" });
+                    if let Some(branch) = b {
+                        self.cached_project_path = Some(project_path);
+                        self.cached_branch = Some(Some(branch));
+                        self.cached_head_ref = Some(head_ref);
+                        self.cache_populated_at = Some(Instant::now());
+                    } else {
+                        log::debug!("Clearing cached git branch after lookup failure");
+                        self.cached_project_path = Some(project_path);
+                        self.cached_branch = Some(None);
+                        self.cached_head_ref = Some(head_ref);
+                        self.cache_populated_at = Some(Instant::now());
+                    }
+                } else {
+                    log::debug!("Using cached project path and git branch");
+                }
+
+                self.cached_branch.clone().flatten()
+            };
+
+            // Reset the session timer when either the project or git branch changes.
+            // (This improves accuracy when switching branches without changing project.)
+            let state_now = (project.clone(), branch.clone());
+            if state_before != state_now {
+                started_at = Timestamps::new().start(current_time() * 1000);
+                state_before = state_now;
+            }
+
+            self.set_working_activity(&project, &started_at, branch.as_deref())?;
             self.sleep_xcode_update();
             self.check_xcode()?;
         }
 
         log::info!("Xcode stopped, clearing Discord activity");
         self.clear_activity()?;
+
+        // Clear cached path/branch info so the next Xcode session starts fresh.
+        self.cached_project_path = None;
+        self.cached_branch = None;
+        self.cached_head_ref = None;
+        self.cache_populated_at = None;
         Ok(())
     }
 
@@ -218,10 +305,15 @@ impl XcodeState<'_> {
     }
 
     /// Sets Discord activity to working state with project and file information
-    fn set_working_activity(&mut self, project: &str, started_at: &Timestamps) -> Result<()> {
+    fn set_working_activity(
+        &mut self,
+        project: &str,
+        started_at: &Timestamps,
+        branch: Option<&str>,
+    ) -> Result<()> {
         // Get all data first
         let (details, (large_text, large_image)) = self.get_file_details()?;
-        let state = self.get_project_state(project);
+        let state = self.get_project_state(project, branch);
 
         // Now use the data to set activity
         let activity = Activity::new()
@@ -270,12 +362,24 @@ impl XcodeState<'_> {
         Ok((details, keys))
     }
 
-    /// Generates state text based on project name and configuration
-    fn get_project_state(&self, project: &str) -> String {
-        if self.config.hide_project {
+    /// Generates state text based on project name, configuration and optional git branch.
+    ///
+    /// When `hide_branch` is `false` and a branch name is available, the branch
+    /// is appended to the state string with a bullet separator, e.g.
+    /// `"in MyApp • feat/export"`. Long branch names are gracefully truncated
+    /// so the combined string never exceeds Discord's 128-byte state limit.
+    fn get_project_state(&self, project: &str, branch: Option<&str>) -> String {
+        let base = if self.config.hide_project {
             String::from("in a Project")
         } else {
             format!("in {project}")
+        };
+
+        match branch {
+            Some(b) => {
+                format_branch_state(&base, b)
+            }
+            _ => base,
         }
     }
 }
