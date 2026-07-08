@@ -7,6 +7,8 @@ use std::path::PathBuf;
 const HIDE_FILE_ARG_ID: &str = "hide_file";
 /// Argument ID for hiding the project name in Discord Rich Presence
 const HIDE_PROJECT_ARG_ID: &str = "hide_project";
+/// Argument ID for hiding the git branch in Discord Rich Presence
+const HIDE_BRANCH_ARG_ID: &str = "hide_branch";
 /// Argument ID for the custom config file path
 const CONFIG_ARG_ID: &str = "config";
 /// Argument ID for disabling idle detection
@@ -30,6 +32,8 @@ pub struct AppConfig {
     pub hide_file: bool,
     /// Whether to hide the project name in Discord Rich Presence
     pub hide_project: bool,
+    /// Whether to hide the git branch name in Discord Rich Presence
+    pub hide_branch: bool,
 }
 
 impl AppConfig {
@@ -63,6 +67,9 @@ impl AppConfig {
         }
         if clap_matches.get_flag(DISABLE_IDLE_ARG_ID) {
             builder = builder.set_override("disable_idle", true)?;
+        }
+        if clap_matches.get_flag(HIDE_BRANCH_ARG_ID) {
+            builder = builder.set_override("hide_branch", true)?;
         }
         let c = builder.build()?;
         
@@ -105,6 +112,14 @@ impl AppConfig {
                     .num_args(0)
                     .action(ArgAction::SetTrue)
                     .help("Hide current project in Discord Rich Presence"),
+            )
+            .arg(
+                Arg::new(HIDE_BRANCH_ARG_ID)
+                    .short('b')
+                    .long("hide-branch")
+                    .num_args(0)
+                    .action(ArgAction::SetTrue)
+                    .help("Hide current git branch in Discord Rich Presence"),
             )
             .get_matches()
     }

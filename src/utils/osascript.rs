@@ -34,8 +34,20 @@ pub fn check_xcode() -> Result<bool> {
     Ok(xcode_is_running == "true")
 }
 
-/// Get the current file's name as a String
+/// Get the current file's name as a String.
+///
+/// Tries to get the file name from the active source editor document path first
+/// (more reliable), falling back to parsing the window title.
 pub fn current_file() -> Result<String> {
+    // Prefer reading the document path directly — it works even when the window
+    // title omits the separator (e.g. project-only titles).
+    if let Ok(file) = current_file_from_source_editor() {
+        if !file.is_empty() && !file.eq_ignore_ascii_case("missing value") {
+            return Ok(file);
+        }
+    }
+
+    // Fall back to parsing the window title (format: "FileName.swift — ProjectName")
     let raw = run_osascript(
         r#"
         tell application "Xcode"
@@ -43,18 +55,25 @@ pub fn current_file() -> Result<String> {
         end tell
     "#,
     )?;
-    log::debug!("current_file raw: {:?}", raw);
+    log::debug!("current_file (window title) raw: {:?}", raw);
 
-    let file = if raw.contains(" — ") {
-        raw.split(" — ").collect::<Vec<&str>>()[1].to_string()
+    // The window title format is "FileName.swift — ProjectName"; take the first part.
+    let file = raw
+        .rsplit_once(" — ")
+        .map(|(file, _project)| file.to_string())
+        .unwrap_or(raw);
+    log::debug!("current_file (window title) parsed: {:?}", file);
+    if file.eq_ignore_ascii_case("missing value") {
+        Ok(String::new())
     } else {
-        raw
-    };
-    log::debug!("current_file parsed: {:?}", file);
-    Ok(file)
+        Ok(file)
+    }
 }
 
-/// Get the current file from the source editor document path (more reliable than window title parsing)
+/// Get the current file name from the active source editor document path.
+///
+/// This is more reliable than parsing the window title because it always
+/// reflects the file that is actually open in the editor.
 pub fn current_file_from_source_editor() -> Result<String> {
     let raw = run_osascript(
         r#"
@@ -65,6 +84,12 @@ pub fn current_file_from_source_editor() -> Result<String> {
     "#,
     )?;
     log::debug!("current_file_from_source_editor raw: {:?}", raw);
+
+    // Guard against AppleScript returning the "missing value" sentinel
+    if raw.eq_ignore_ascii_case("missing value") {
+        log::debug!("current_file_from_source_editor: got \"missing value\" sentinel, returning empty");
+        return Ok(String::new());
+    }
 
     // Extract just the filename from the full path
     let file = raw
@@ -96,6 +121,27 @@ pub fn current_project() -> Result<String> {
     };
     log::debug!("current_project parsed: {:?}", project);
     Ok(project)
+}
+
+/// Get the filesystem path of the currently active Xcode workspace/project document.
+///
+/// Returns an empty string when no workspace is open.
+///
+/// Propagates AppleScript execution errors to the caller.
+pub fn current_project_path() -> Result<String> {
+    let raw = run_osascript(
+        r#"
+        tell application "Xcode"
+            set doc to active workspace document
+            if doc is missing value then
+                return ""
+            end if
+            return path of doc
+        end tell
+    "#,
+    )?;
+    log::debug!("current_project_path raw: {:?}", raw);
+    Ok(raw)
 }
 
 /// Check if frontmost application is Xcode
