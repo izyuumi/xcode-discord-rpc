@@ -24,6 +24,12 @@ jobs:
 
   release:
     needs: pre-release-check
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -94,6 +100,37 @@ jobs:
       - name: Copy Archive to Home
         if: ${{ steps.release.outputs.release_created }}
         run: cp target/release/universal/xcode-discord-rpc.tar.gz .
+
+      - name: SBOM
+        if: ${{ steps.release.outputs.release_created }}
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          output-file: ${{ runner.temp }}/xcode-discord-rpc.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      # Attest the release archive's build provenance.
+      - name: Attest build provenance
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ./xcode-discord-rpc.tar.gz
+
+      # Attest the SPDX SBOM for the release archive.
+      - name: Attest SBOM
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: ./xcode-discord-rpc.tar.gz
+          sbom-path: ${{ runner.temp }}/xcode-discord-rpc.spdx.json
+
+      - name: Verify attestation
+        if: ${{ steps.release.outputs.release_created }}
+        run: gh attestation verify ./xcode-discord-rpc.tar.gz --repo izyuumi/xcode-discord-rpc
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Upload Release Asset
         if: ${{ steps.release.outputs.release_created }}
